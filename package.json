@@ -2,14 +2,22 @@
   "name": "dev_ok",
   "private": true,
   "version": "1.0.0",
+
   "packageManager": "pnpm@10.15.0",
+
+  "engines": {
+    "node": "20.x"
+  },
+
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "gen:equations": "tsx packages/calc-engine/scripts/gen_equations.ts",
+    "test": "echo \"No tests configured\""
+  },
+
   "devDependencies": {
     "csv-parse": "^6.1.0",
     "tsx": "^4.20.5"
-  },
-  "scripts": {
-    "dev": "pnpm --filter web dev",
-    "gen:equations": "tsx packages/calc-engine/scripts/gen_equations.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
