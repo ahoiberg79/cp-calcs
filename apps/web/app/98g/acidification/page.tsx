@@ -29,10 +29,10 @@ type FertKey =
   | "MicroEssentials S15 (MES-S15)"
   | "Elemental Sulfur (ES)";
 
-type RowUnits =
-  | { fertilizer: Exclude<FertKey, "Elemental Sulfur (ES)">; unitsN?: number }
-  | { fertilizer: "Elemental Sulfur (ES)"; unitsS?: number };
+type Mode = "units" | "rate";
 
+// ✅ Keep this SIMPLE to avoid TS union pain in UI code.
+type RowUnits = { fertilizer: FertKey; unitsN?: number; unitsS?: number };
 type RowRate = { fertilizer: FertKey; rate_lbs_ac?: number };
 type RowState = RowUnits | RowRate;
 
@@ -54,7 +54,7 @@ const CAP = new Map<FertKey, { acceptsN: boolean; hasMES?: boolean; acceptsS?: b
 const ANALYSIS: Record<FertKey, { N_pct?: number; S_pct?: number }> = {
   "Anhydrous Ammonia (AA)": { N_pct: 82 },
   "Urea": { N_pct: 46 },
-  "Ammonium Sulfate (AMS)": { N_pct: 21, S_pct: 24 }, // S (sulfate) does not acidify
+  "Ammonium Sulfate (AMS)": { N_pct: 21, S_pct: 24 }, // sulfate S does not acidify
   "Monoammonium Phosphate (MAP)": { N_pct: 11 },
   "Diammonium Phosphate (DAP)": { N_pct: 18 },
   "Ammonium Nitrate (AN)": { N_pct: 34 },
@@ -65,12 +65,26 @@ const ANALYSIS: Record<FertKey, { N_pct?: number; S_pct?: number }> = {
   "Elemental Sulfur (ES)": { S_pct: 90 }, // ✅ 90% S
 };
 
-const ALL_ROWS_UNITS: RowState[] = Array.from(CAP.keys()).map((k) =>
-  k === "Elemental Sulfur (ES)" ? ({ fertilizer: k } as RowUnits) : ({ fertilizer: k } as RowUnits)
-);
-const ALL_ROWS_RATE: RowState[] = Array.from(CAP.keys()).map((k) => ({ fertilizer: k } as RowRate));
+const ALL_ROWS_UNITS: RowUnits[] = Array.from(CAP.keys()).map((k) => ({ fertilizer: k }));
+const ALL_ROWS_RATE: RowRate[] = Array.from(CAP.keys()).map((k) => ({ fertilizer: k }));
 
-type Mode = "units" | "rate";
+const isMES = (f: FertKey) => f.startsWith("MicroEssentials");
+const isES = (f: FertKey) => f === "Elemental Sulfur (ES)";
+
+type Derived = { n?: number; s?: number; acidS?: number };
+
+// Minimal “engine row” typing (only what we send)
+type EngineRow = { fertilizer: FertKey; unitsN?: number; unitsS?: number; mesProductRate_lbs_ac?: number };
+
+// Minimal output typing (only what we read)
+type EngineOutRow = {
+  fertilizer: FertKey;
+  lbs98gNeeded: number;
+  contrib_N_lbs98g?: number;
+  contrib_S_lbs98g?: number;
+  debug?: { mes_elemental_S_units?: number };
+};
+type EngineOut = { total_lbs98g_per_ac: number; rows: EngineOutRow[] };
 
 export default function FertilizerAcidityPage() {
   const [enp, setEnp] = useState<number>(0.94);
@@ -82,65 +96,71 @@ export default function FertilizerAcidityPage() {
     setRows(m === "units" ? ALL_ROWS_UNITS : ALL_ROWS_RATE);
   };
 
-  const update = (idx: number, patch: Partial<RowState>) =>
+  const update = (idx: number, patch: Partial<RowUnits> | Partial<RowRate>) =>
     setRows((rs) => rs.map((r, i) => (i === idx ? ({ ...r, ...patch } as RowState) : r)));
 
   // Derived units in RATE mode
   const derivedUnits = useMemo(() => {
-    if (mode !== "rate") return new Map<FertKey, { n?: number; s?: number; acidS?: number }>();
-    const m = new Map<FertKey, { n?: number; s?: number; acidS?: number }>();
+    const m = new Map<FertKey, Derived>();
+    if (mode !== "rate") return m;
+
     for (const r of rows as RowRate[]) {
       const a = ANALYSIS[r.fertilizer];
-      const rate = (r as any).rate_lbs_ac ?? 0;
+      const rate = r.rate_lbs_ac ?? 0;
+
       const n = a.N_pct ? rate * (a.N_pct / 100) : undefined;
       const totalS = a.S_pct ? rate * (a.S_pct / 100) : undefined;
+
       let acidS: number | undefined;
-      if (r.fertilizer.startsWith("MicroEssentials") && totalS !== undefined) acidS = totalS * 0.5; // MES: 1/2 of S
-      else if (r.fertilizer === "Elemental Sulfur (ES)" && totalS !== undefined) acidS = totalS; // ES: 100% of S
+      if (isMES(r.fertilizer) && totalS !== undefined) acidS = totalS * 0.5; // MES: 1/2 of S
+      else if (isES(r.fertilizer) && totalS !== undefined) acidS = totalS; // ES: 100% of S
+
       m.set(r.fertilizer, { n, s: totalS, acidS });
     }
     return m;
   }, [mode, rows]);
 
   // Build engine input from UI state
-  const engineInput = useMemo(() => {
+  const engineInput: EngineRow[] = useMemo(() => {
     if (mode === "units") {
-      return (rows as RowUnits[]).map((r) =>
-        r.fertilizer === "Elemental Sulfur (ES)"
-          ? { fertilizer: r.fertilizer, unitsS: r.unitsS }
-          : { fertilizer: r.fertilizer, unitsN: (r as any).unitsN }
-      );
-    } else {
-      const list: any[] = [];
-      for (const r of rows as RowRate[]) {
-        const rate = (r as any).rate_lbs_ac ?? 0;
-        const a = ANALYSIS[r.fertilizer];
-        const nUnits = a.N_pct ? rate * (a.N_pct / 100) : undefined;
-
-        if (r.fertilizer.startsWith("MicroEssentials")) {
-          list.push({ fertilizer: r.fertilizer, unitsN: nUnits, mesProductRate_lbs_ac: rate });
-        } else if (r.fertilizer === "Elemental Sulfur (ES)") {
-          // with 90% S analysis, unitsS = rate * 0.90
-          const sUnits = a.S_pct ? rate * (a.S_pct / 100) : rate;
-          list.push({ fertilizer: r.fertilizer, unitsS: sUnits });
-        } else {
-          list.push({ fertilizer: r.fertilizer, unitsN: nUnits });
-        }
-      }
-      return list;
+      return (rows as RowUnits[]).map((r) => ({
+        fertilizer: r.fertilizer,
+        unitsN: r.unitsN,
+        unitsS: r.unitsS,
+      }));
     }
+
+    // mode === "rate"
+    const list: EngineRow[] = [];
+    for (const r of rows as RowRate[]) {
+      const rate = r.rate_lbs_ac ?? 0;
+      const a = ANALYSIS[r.fertilizer];
+      const nUnits = a.N_pct ? rate * (a.N_pct / 100) : undefined;
+
+      if (isMES(r.fertilizer)) {
+        list.push({ fertilizer: r.fertilizer, unitsN: nUnits, mesProductRate_lbs_ac: rate });
+      } else if (isES(r.fertilizer)) {
+        const sUnits = a.S_pct ? rate * (a.S_pct / 100) : rate;
+        list.push({ fertilizer: r.fertilizer, unitsS: sUnits });
+      } else {
+        list.push({ fertilizer: r.fertilizer, unitsN: nUnits });
+      }
+    }
+    return list;
   }, [mode, rows]);
 
-  const out = useMemo(
-    () => runFertilizerAcidityAll({ enpFraction98G: enp, rows: engineInput as any }),
-    [engineInput, enp]
-  );
+  const out = useMemo(() => {
+    // Avoid `any` but still allow calling into calc-engine without importing its types.
+    return runFertilizerAcidityAll({ enpFraction98G: enp, rows: engineInput }) as unknown as EngineOut;
+  }, [engineInput, enp]);
 
   // MES acidifying S lookup (from engine debug) used in Units mode
   const mesAcidSLookup = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of out.rows)
-      if (r.debug?.mes_elemental_S_units !== undefined) m.set(r.fertilizer, r.debug.mes_elemental_S_units);
+    for (const r of out.rows) {
+      const v = r.debug?.mes_elemental_S_units;
+      if (typeof v === "number" && Number.isFinite(v)) m.set(r.fertilizer, v);
+    }
     return m;
   }, [out.rows]);
 
@@ -151,33 +171,26 @@ export default function FertilizerAcidityPage() {
 
     if (mode === "units") {
       for (const r of rows as RowUnits[]) {
-        const isES = r.fertilizer === "Elemental Sulfur (ES)";
-        const isMES = r.fertilizer.startsWith("MicroEssentials");
-
-        if (!isES) {
-          const uN = (r as any).unitsN;
+        if (!isES(r.fertilizer)) {
+          const uN = r.unitsN;
           if (typeof uN === "number" && Number.isFinite(uN)) totalN += Math.max(0, uN);
         } else {
-          const uS = (r as any).unitsS;
+          const uS = r.unitsS;
           if (typeof uS === "number" && Number.isFinite(uS)) totalAcidS += Math.max(0, uS); // ES = 100% acidifying
         }
 
-        if (isMES) {
+        if (isMES(r.fertilizer)) {
           const acidS = mesAcidSLookup.get(r.fertilizer);
-          if (typeof acidS === "number" && Number.isFinite(acidS)) totalAcidS += Math.max(0, acidS); // MES = ½ label S
+          if (typeof acidS === "number" && Number.isFinite(acidS)) totalAcidS += Math.max(0, acidS);
         }
       }
     } else {
-      // mode === "rate"
       for (const r of rows as RowRate[]) {
-        const d = derivedUnits.get(r.fertilizer as FertKey);
-        if (d?.n && Number.isFinite(d.n)) totalN += Math.max(0, d.n);
+        const d = derivedUnits.get(r.fertilizer);
+        if (d?.n !== undefined && Number.isFinite(d.n)) totalN += Math.max(0, d.n);
 
-        const isMES = r.fertilizer.startsWith("MicroEssentials");
-        const isES = r.fertilizer === "Elemental Sulfur (ES)";
-        if ((isMES || isES) && d?.acidS && Number.isFinite(d.acidS)) {
-          totalAcidS += Math.max(0, d.acidS);
-        }
+        const wantsAcidS = isMES(r.fertilizer) || isES(r.fertilizer);
+        if (wantsAcidS && d?.acidS !== undefined && Number.isFinite(d.acidS)) totalAcidS += Math.max(0, d.acidS);
       }
     }
 
@@ -235,53 +248,51 @@ export default function FertilizerAcidityPage() {
           />
           <div className="grid gap-2">
             {rows.map((r, i) => {
-              const derived = mode === "rate" ? derivedUnits.get(r.fertilizer as FertKey) : undefined;
-              const mesAcidS = mode === "rate" ? derived?.acidS : mesAcidSLookup.get(r.fertilizer);
+              const fert = r.fertilizer as FertKey;
+              const derived = mode === "rate" ? derivedUnits.get(fert) : undefined;
+              const mesAcidS = mode === "rate" ? derived?.acidS : mesAcidSLookup.get(fert);
               const stripe = i % 2 === 0 ? "bg-white" : "bg-gray-50";
 
-              const isMES = r.fertilizer.startsWith("MicroEssentials");
-              const isES = r.fertilizer === "Elemental Sulfur (ES)";
+              const rowIsMES = isMES(fert);
+              const rowIsES = isES(fert);
 
               return (
                 <div key={i} className={`grid grid-cols-12 items-center gap-2 rounded border p-3 ${stripe}`}>
                   {/* Name */}
-                  <div className="col-span-4 pr-2 font-medium truncate">{r.fertilizer}</div>
+                  <div className="col-span-4 pr-2 font-medium truncate">{fert}</div>
 
                   {/* UNITS MODE */}
                   {mode === "units" && (
                     <>
-                      {/* AA/Urea/... (N) */}
-                      {!isES && (
-                        <div className={isMES ? "col-span-5" : "col-span-8"}>
+                      {!rowIsES && (
+                        <div className={rowIsMES ? "col-span-5" : "col-span-8"}>
                           <label className="block text-[11px]">Units N (lb/ac)</label>
                           <input
                             type="number"
-                            value={(r as any).unitsN ?? ""}
+                            value={(r as RowUnits).unitsN ?? ""}
                             onChange={(e) =>
-                              update(i, { unitsN: e.target.value ? Number(e.target.value) : undefined })
+                              update(i, { unitsN: e.target.value ? Number(e.target.value) : undefined } as Partial<RowUnits>)
                             }
                             className="h-9 w-24 md:w-28 rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                           />
                         </div>
                       )}
 
-                      {/* ES (S) */}
-                      {isES && (
+                      {rowIsES && (
                         <div className="col-span-8">
                           <label className="block text-[11px]">Units S (lb/ac)</label>
                           <input
                             type="number"
-                            value={(r as any).unitsS ?? ""}
+                            value={(r as RowUnits).unitsS ?? ""}
                             onChange={(e) =>
-                              update(i, { unitsS: e.target.value ? Number(e.target.value) : undefined })
+                              update(i, { unitsS: e.target.value ? Number(e.target.value) : undefined } as Partial<RowUnits>)
                             }
                             className="h-9 w-24 md:w-28 rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                           />
                         </div>
                       )}
 
-                      {/* MES acidifying S (auto) */}
-                      {isMES && (
+                      {rowIsMES && (
                         <div className="col-span-3">
                           <label className="block text-[11px]">Acidifying S (auto)</label>
                           <input
@@ -298,22 +309,20 @@ export default function FertilizerAcidityPage() {
                   {/* RATE MODE */}
                   {mode === "rate" && (
                     <>
-                      {/* Product rate */}
-                      <div className={isMES ? "col-span-3" : "col-span-4"}>
+                      <div className={rowIsMES ? "col-span-3" : "col-span-4"}>
                         <label className="block text-[11px]">Product rate (lb/ac)</label>
                         <input
                           type="number"
-                          value={(r as any).rate_lbs_ac ?? ""}
+                          value={(r as RowRate).rate_lbs_ac ?? ""}
                           onChange={(e) =>
-                            update(i, { rate_lbs_ac: e.target.value ? Number(e.target.value) : undefined })
+                            update(i, { rate_lbs_ac: e.target.value ? Number(e.target.value) : undefined } as Partial<RowRate>)
                           }
                           className="h-9 w-24 md:w-28 rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                       </div>
 
-                      {/* Derived N (skip for ES) */}
-                      {!isES && (
-                        <div className={isMES ? "col-span-3" : "col-span-4"}>
+                      {!rowIsES && (
+                        <div className={rowIsMES ? "col-span-3" : "col-span-4"}>
                           <label className="block text-[11px]">Derived N units (auto)</label>
                           <input
                             type="text"
@@ -324,8 +333,7 @@ export default function FertilizerAcidityPage() {
                         </div>
                       )}
 
-                      {/* MES acid S / ES S (auto) */}
-                      {isMES && (
+                      {rowIsMES && (
                         <div className="col-span-3">
                           <label className="block text-[11px]">Acidifying S (auto)</label>
                           <input
@@ -336,7 +344,8 @@ export default function FertilizerAcidityPage() {
                           />
                         </div>
                       )}
-                      {isES && (
+
+                      {rowIsES && (
                         <div className="col-span-4">
                           <label className="block text-[11px]">S units (auto)</label>
                           <input

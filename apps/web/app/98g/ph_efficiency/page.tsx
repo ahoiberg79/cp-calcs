@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ALLOWED_PHS,
   DEFAULT_PRICE,
@@ -8,36 +8,51 @@ import {
   runPhEfficiency,
   type Crop,
   type FertilizerId,
-  type Nutrient,
   type RunInput,
 } from "@calc-engine/core";
 
-/* small helpers */
-const SO4_RED = "#B21F2D"; // brand red for the top bar
-const fmt1 = (n: number) => n.toFixed(1);
-const money = (n: number) =>
-  new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(n);
+const SO4_RED = "#B21F2D";
 
 const CROPS: Crop[] = ["Corn Grain", "Soybean", "Wheat", "Alfalfa"];
-const PHS = ALLOWED_PHS as readonly number[];
+
+const fmt1 = (n: number) => n.toFixed(1);
+const fmt2 = (n: number) => n.toFixed(2);
+const money0 = (n: number) =>
+  new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
 type ChoiceState = { id: FertilizerId; price: number };
 
+function Tile(props: { title: string; value: string; highlight?: boolean; sub?: string }) {
+  return (
+    <div
+      className={[
+        "rounded-2xl border bg-white p-4 shadow-sm",
+        props.highlight ? "border-amber-300 ring-1 ring-amber-200" : "border-gray-200",
+      ].join(" ")}
+    >
+      <div className="text-xs font-medium text-gray-600">{props.title}</div>
+      <div className="mt-1 text-2xl font-bold text-gray-900">{props.value}</div>
+      {props.sub && <div className="mt-1 text-xs text-gray-600">{props.sub}</div>}
+    </div>
+  );
+}
+
 export default function PhEfficiencyPage() {
   const [crop, setCrop] = useState<Crop>("Corn Grain");
-  const [yieldGoal, setYield] = useState<number>(225);
-  const [soilPH, setSoilPH] = useState<number>(5.0);
+  const [yieldGoal, setYieldGoal] = useState<number>(225);
+  const [soilPH, setSoilPH] = useState<number>(ALLOWED_PHS[0]);
 
-  // strictly filtered menus
-  const N_OPTIONS = listFertilizersFor("N");
-  const P_OPTIONS = listFertilizersFor("P2O5");
-  const K_OPTIONS = listFertilizersFor("K2O");
-  const S_OPTIONS = listFertilizersFor("S");
+  // STRICT menus from engine (primary nutrient only)
+  const N_OPTIONS = useMemo(() => listFertilizersFor("N"), []);
+  const P_OPTIONS = useMemo(() => listFertilizersFor("P2O5"), []);
+  const K_OPTIONS = useMemo(() => listFertilizersFor("K2O"), []);
+  const S_OPTIONS = useMemo(() => listFertilizersFor("S"), []);
 
-  const [n, setN] = useState<ChoiceState>({ id: N_OPTIONS[0].id, price: DEFAULT_PRICE[N_OPTIONS[0].id] });
-  const [p, setP] = useState<ChoiceState>({ id: P_OPTIONS[0].id, price: DEFAULT_PRICE[P_OPTIONS[0].id] });
-  const [k, setK] = useState<ChoiceState>({ id: K_OPTIONS[0].id, price: DEFAULT_PRICE[K_OPTIONS[0].id] });
-  const [s, setS] = useState<ChoiceState>({ id: S_OPTIONS[0].id, price: DEFAULT_PRICE[S_OPTIONS[0].id] });
+  // initialize to first valid option in each list
+  const [n, setN] = useState<ChoiceState>(() => ({ id: N_OPTIONS[0].id, price: DEFAULT_PRICE[N_OPTIONS[0].id] }));
+  const [p, setP] = useState<ChoiceState>(() => ({ id: P_OPTIONS[0].id, price: DEFAULT_PRICE[P_OPTIONS[0].id] }));
+  const [k, setK] = useState<ChoiceState>(() => ({ id: K_OPTIONS[0].id, price: DEFAULT_PRICE[K_OPTIONS[0].id] }));
+  const [s, setS] = useState<ChoiceState>(() => ({ id: S_OPTIONS[0].id, price: DEFAULT_PRICE[S_OPTIONS[0].id] }));
 
   // keep price in sync when product changes
   const onSelect =
@@ -62,15 +77,13 @@ export default function PhEfficiencyPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* brand bar */}
       <div className="h-2 w-full" style={{ backgroundColor: SO4_RED }} />
 
-      <section className="mx-auto max-w-5xl p-6">
-        <h1 className="mb-2 text-2xl font-bold">Nutrient Dollars at Risk — Soil pH Efficiency</h1>
-        <p className="mb-4 text-sm text-gray-600">
-          Choose crop, yield goal, soil pH, and fertilizers. We size P/K/S to crop removal, then size{" "}
-          <b>N</b> after crediting N contributed by those sources. $/A is computed per nutrient using the product
-          cost and the pH-based utilization. <b>Phosphorus</b> is emphasized.
+      <section className="mx-auto max-w-6xl px-6 pb-12 pt-8">
+        <h1 className="mb-2 text-2xl font-bold">pH Efficiency — Fertilizer Dollars at Risk</h1>
+        <p className="mb-6 max-w-4xl text-sm text-gray-700">
+          We size P/K/S to crop removal, then size <b>N</b> after crediting N contributed by those sources.
+          Utilization is pH-based. <b>Phosphorus</b> is emphasized. (Platform rule: $ at risk summary excludes S.)
         </p>
 
         {/* Inputs */}
@@ -83,7 +96,9 @@ export default function PhEfficiencyPage() {
               className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               {CROPS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </label>
@@ -95,7 +110,7 @@ export default function PhEfficiencyPage() {
               step={1}
               min={0}
               value={yieldGoal}
-              onChange={(e) => setYield(e.target.value === "" ? 0 : Number(e.target.value))}
+              onChange={(e) => setYieldGoal(e.target.value === "" ? 0 : Number(e.target.value))}
               className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </label>
@@ -107,8 +122,10 @@ export default function PhEfficiencyPage() {
               onChange={(e) => setSoilPH(Number(e.target.value))}
               className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
-              {PHS.map((p) => (
-                <option key={p} value={p}>{p.toFixed(1)}</option>
+              {ALLOWED_PHS.map((ph) => (
+                <option key={ph} value={ph}>
+                  {ph.toFixed(1)}
+                </option>
               ))}
             </select>
           </label>
@@ -116,147 +133,83 @@ export default function PhEfficiencyPage() {
 
         {/* Product pickers */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          {/* N */}
-          <div className="rounded-2xl border p-4">
-            <div className="mb-1 text-sm font-medium">N source</div>
-            <select
-              value={n.id}
-              onChange={onSelect(setN)}
-              className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {N_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>{o.label}</option>
-              ))}
-            </select>
-            <div className="mt-2 space-y-1">
-              <label className="block text-[11px]">Price ($/ton)</label>
-              <input
-                type="number"
-                step={1}
-                value={n.price}
-                onChange={(e) => setN({ ...n, price: Number(e.target.value) })}
-                className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-          </div>
-
-          {/* P */}
-          <div className="rounded-2xl border p-4">
-            <div className="mb-1 text-sm font-medium">P source</div>
-            <select
-              value={p.id}
-              onChange={onSelect(setP)}
-              className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {P_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>{o.label}</option>
-              ))}
-            </select>
-            <div className="mt-2 space-y-1">
-              <label className="block text-[11px]">Price ($/ton)</label>
-              <input
-                type="number"
-                step={1}
-                value={p.price}
-                onChange={(e) => setP({ ...p, price: Number(e.target.value) })}
-                className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-          </div>
-
-          {/* K */}
-          <div className="rounded-2xl border p-4">
-            <div className="mb-1 text-sm font-medium">K source</div>
-            <select
-              value={k.id}
-              onChange={onSelect(setK)}
-              className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {K_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>{o.label}</option>
-              ))}
-            </select>
-            <div className="mt-2 space-y-1">
-              <label className="block text-[11px]">Price ($/ton)</label>
-              <input
-                type="number"
-                step={1}
-                value={k.price}
-                onChange={(e) => setK({ ...k, price: Number(e.target.value) })}
-                className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-          </div>
-
-          {/* S */}
-          <div className="rounded-2xl border p-4">
-            <div className="mb-1 text-sm font-medium">S source</div>
-            <select
-              value={s.id}
-              onChange={onSelect(setS)}
-              className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            >
-              {S_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>{o.label}</option>
-              ))}
-            </select>
-            <div className="mt-2 space-y-1">
-              <label className="block text-[11px]">Price ($/ton)</label>
-              <input
-                type="number"
-                step={1}
-                value={s.price}
-                onChange={(e) => setS({ ...s, price: Number(e.target.value) })}
-                className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-          </div>
+          {/** N */}
+          <Picker title="N source" value={n} setValue={setN} options={N_OPTIONS} onSelect={onSelect} />
+          {/** P */}
+          <Picker title="P source" value={p} setValue={setP} options={P_OPTIONS} onSelect={onSelect} />
+          {/** K */}
+          <Picker title="K source" value={k} setValue={setK} options={K_OPTIONS} onSelect={onSelect} />
+          {/** S */}
+          <Picker title="S source" value={s} setValue={setS} options={S_OPTIONS} onSelect={onSelect} />
         </div>
 
-        {/* Results table */}
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto border-collapse rounded-2xl border">
-            <thead className="bg-gray-100">
-              <tr className="text-left">
-                <th className="px-3 py-2">Nutrient</th>
-                <th className="px-3 py-2">Needed (lb/ac)</th>
-                <th className="px-3 py-2">Utilization</th>
-                <th className="px-3 py-2">Rate (lb/ac)</th>
-                <th className="px-3 py-2">Cost ($/A)</th>
-                <th className="px-3 py-2">$ at risk / A</th>
+        {/* Summary tiles */}
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Tile title="Total cost ($/A)" value={money0(out.totalCostPerAc)} />
+          <Tile title="$ at risk ($/A) — N/P/K only" value={money0(out.totalAtRiskDollarsPerAc)} />
+          <Tile
+            title="P utilization"
+            value={`${Math.round(out.cards.P.util * 100)}%`}
+            sub="pH-driven utilization factor"
+            highlight
+          />
+        </div>
+
+        {/* Fertilizer detail table (no utilization / at risk columns) */}
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="px-3 py-2 text-left w-[34%]">Fertilizer used</th>
+                <th className="px-2 py-2 text-right">Rate (lb/A)</th>
+                <th className="px-2 py-2 text-right">N supplied</th>
+                <th className="px-2 py-2 text-right">P₂O₅ supplied</th>
+                <th className="px-2 py-2 text-right">K₂O supplied</th>
+                <th className="px-2 py-2 text-right">S supplied</th>
+                <th className="px-2 py-2 text-right">Cost ($/A)</th>
               </tr>
             </thead>
             <tbody>
-              {out.rows.map((r) => (
-                <tr key={r.nutrient} className="border-t">
-                  <td className="px-3 py-2">{r.nutrient}</td>
-                  <td className="px-3 py-2">{fmt1(r.needed_lb_ac)}</td>
-                  <td className="px-3 py-2">{Math.round(r.utilization_frac * 100)}%</td>
-                  <td className="px-3 py-2">{fmt1(r.rate_lb_ac)}</td>
-                  <td className="px-3 py-2">{money(r.cost_per_ac)}</td>
-                  <td className="px-3 py-2">{money(r.atRisk_per_ac)}</td>
-                </tr>
-              ))}
-              <tr className="border-t bg-gray-50 font-medium">
-                <td className="px-3 py-2">Totals</td>
-                <td className="px-3 py-2">—</td>
-                <td className="px-3 py-2">—</td>
-                <td className="px-3 py-2">—</td>
-                <td className="px-3 py-2">{money(out.totalCostPerAc)}</td>
-                <td className="px-3 py-2">{money(out.totalAtRiskPerAc)}</td>
+              {out.fertRows.map((fr, i) => {
+                const stripe = i % 2 === 0 ? "bg-white" : "bg-gray-50";
+                return (
+                  <tr key={fr.id} className={`border-t ${stripe}`}>
+                    <td className="px-3 py-2 font-medium">{fr.label}</td>
+                    <td className="px-2 py-2 text-right">{fmt1(fr.rate_lb_ac)}</td>
+                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.N)}</td>
+                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.P2O5)}</td>
+                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.K2O)}</td>
+                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.S)}</td>
+                    <td className="px-2 py-2 text-right">{money0(fr.cost_per_ac)}</td>
+                  </tr>
+                );
+              })}
+              <tr className="border-t bg-gray-50 font-semibold">
+                <td className="px-3 py-2">Totals supplied</td>
+                <td className="px-2 py-2 text-right">—</td>
+                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.N)}</td>
+                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.P2O5)}</td>
+                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.K2O)}</td>
+                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.S)}</td>
+                <td className="px-2 py-2 text-right">{money0(out.totalCostPerAc)}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* Bottom cards (N / P emphasized / K) */}
+        {/* Utilization / at-risk tiles (N / P / K only) */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card title="N" util={out.cards.N.util} atRisk={out.cards.N.atRisk} />
-          <Card title="P" util={out.cards.P.util} atRisk={out.cards.P.atRisk} highlight />
-          <Card title="K" util={out.cards.K.util} atRisk={out.cards.K.atRisk} />
+          <Tile title="N utilization" value={`${Math.round(out.cards.N.util * 100)}%`} sub={`At risk: ${money0(out.cards.N.atRisk)}`} />
+          <Tile
+            title="P utilization"
+            value={`${Math.round(out.cards.P.util * 100)}%`}
+            sub={`At risk: ${money0(out.cards.P.atRisk)}`}
+            highlight
+          />
+          <Tile title="K utilization" value={`${Math.round(out.cards.K.util * 100)}%`} sub={`At risk: ${money0(out.cards.K.atRisk)}`} />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-8">
           <a href="/98g" className="text-sm text-blue-600 hover:underline">
             ← Back to 98G calculators
           </a>
@@ -266,22 +219,46 @@ export default function PhEfficiencyPage() {
   );
 }
 
-function Card(props: { title: "N" | "P" | "K"; util: number; atRisk: number; highlight?: boolean }) {
+function Picker(props: {
+  title: string;
+  value: { id: FertilizerId; price: number };
+  setValue: (v: { id: FertilizerId; price: number }) => void;
+  options: { id: FertilizerId; label: string }[];
+  onSelect: (setter: (c: { id: FertilizerId; price: number }) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => void;
+}) {
   return (
-    <div
-      className={`rounded-2xl border p-5 ${props.highlight ? "bg-[#B21F2D] text-white" : "bg-white"}`}
-    >
-      <div className="mb-1 text-lg font-semibold">{props.title}</div>
-      <div className="text-base">
-        <div className="text-sm opacity-80">Utilization:</div>
-        <div className="text-2xl font-bold">{Math.round(props.util * 100)}%</div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-1 text-sm font-medium">{props.title}</div>
+      <select
+        value={props.value.id}
+        onChange={props.onSelect(props.setValue)}
+        className="h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+      >
+        {props.options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+
+      <div className="mt-2 space-y-1">
+        <label className="block text-[11px] text-gray-600">Price ($/ton)</label>
+        <input
+          type="number"
+          step={1}
+          value={props.value.price}
+          onChange={(e) => props.setValue({ ...props.value, price: Number(e.target.value) })}
+          className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+        />
       </div>
-      <div className="mt-3 text-base">
-        <div className="text-sm opacity-80">$ at risk / A:</div>
-        <div className="text-2xl font-bold">
-          {new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(props.atRisk)}
-        </div>
-      </div>
+
+      <button
+        type="button"
+        onClick={() => props.setValue({ ...props.value, price: DEFAULT_PRICE[props.value.id] ?? 0 })}
+        className="mt-2 text-xs text-blue-600 hover:underline"
+      >
+        Reset to default
+      </button>
     </div>
   );
 }

@@ -1,19 +1,30 @@
 "use client";
-import { useMemo, useState } from "react";
-import { runSo4Sulfur, type Crop } from "@calc-engine/core";
 
-/* helpers */
-const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-const fmt = (n: unknown, d = 1) => (isNum(n) ? n.toFixed(d) : "—");
+import React, { useMemo, useState } from "react";
+import { runSo4Sulfur, type So4SulfurInput } from "@calc-engine/core";
+
 const SO4_GREEN = "#2E7D32";
 
+// Crop type that matches runSo4Sulfur()
+type Crop = So4SulfurInput["crop"];
 const CROPS: Crop[] = ["Corn", "Soybean", "Wheat", "Alfalfa"];
+
+// small formatter helper
+const fmt = (n: unknown, digits = 1) => {
+  const v = typeof n === "number" && Number.isFinite(n) ? n : undefined;
+  return v === undefined
+    ? "—"
+    : new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(v);
+};
 
 export default function SO4SulfurRatePage() {
   const [crop, setCrop] = useState<Crop>("Corn");
-  const [yieldGoal, setYieldGoal] = useState<number>(200); // you can change to 0 if you prefer
-  const [sulfurPpm, setSulfurPpm] = useState<number>(0);   // default 0 as requested
-  const [omPct, setOmPct] = useState<number>(0);           // default 0 as requested
+  const [yieldGoal, setYieldGoal] = useState<number>(200);
+  const [sulfurPpm, setSulfurPpm] = useState<number>(0);
+  const [omPct, setOmPct] = useState<number>(0);
 
   const out = useMemo(
     () =>
@@ -26,7 +37,7 @@ export default function SO4SulfurRatePage() {
     [crop, yieldGoal, sulfurPpm, omPct]
   );
 
-  const recLbs = out.rate_lbs_SO4_per_ac;
+  const recLbs = out?.rate_lbs_SO4_per_ac ?? 0;
   const recTons = recLbs / 2000;
 
   const yieldUnit = crop === "Alfalfa" ? "tons/ac" : "bu/ac";
@@ -39,8 +50,8 @@ export default function SO4SulfurRatePage() {
       <section className="mx-auto max-w-3xl p-6">
         <h1 className="mb-2 text-2xl font-bold">SO4 Pelletized Gypsum — Sulfur Rate</h1>
         <p className="mb-4 text-sm text-gray-600">
-          Inputs: <b>Crop</b>, <b>Yield goal</b>, <b>Soil test sulfate-S (ppm)</b>, and <b>Organic matter (%)</b>.
-          Output is a <b>recommended SO4 product rate</b> (lbs/ac). Negative results are floored to 0.
+          Inputs: <b>Crop</b>, <b>Yield goal</b>, <b>Soil test sulfate-S (ppm)</b>, and <b>Organic matter (%)</b>. Output
+          is a <b>recommended SO4 product rate</b> (lbs/ac). Negative results are floored to 0.
         </p>
 
         {/* Inputs */}
@@ -104,10 +115,8 @@ export default function SO4SulfurRatePage() {
         {/* Output */}
         <div className="grid gap-2">
           <div className="text-lg">
-            <b>Recommended SO4 rate:</b>{" "}
-            {fmt(recLbs, 0)} <span className="text-gray-600">lb/ac</span>{" "}
-            <span className="text-gray-400">|</span>{" "}
-            {fmt(recTons, 2)} <span className="text-gray-600">tons/ac</span>
+            <b>Recommended SO4 rate:</b> {fmt(recLbs, 0)} <span className="text-gray-600">lb/ac</span>{" "}
+            <span className="text-gray-400">|</span> {fmt(recTons, 2)} <span className="text-gray-600">tons/ac</span>
           </div>
 
           <details className="group">
@@ -115,17 +124,15 @@ export default function SO4SulfurRatePage() {
               Show calculation terms
             </summary>
             <div className="mt-2 grid gap-1 text-sm">
-              <div>Yield term: {fmt(out.details.yieldTerm, 3)}</div>
-              <div>S-ppm term: {fmt(out.details.sulfurTerm, 3)}</div>
-              <div>OM term: {fmt(out.details.omTerm, 3)}</div>
-              <div>Pre-conversion (S basis): {fmt(out.details.preConversion, 3)}</div>
+              <div>Yield term: {fmt(out?.details?.yieldTerm, 3)}</div>
+              <div>S-ppm term: {fmt(out?.details?.sulfurTerm, 3)}</div>
+              <div>OM term: {fmt(out?.details?.omTerm, 3)}</div>
+              <div>Pre-conversion (S basis): {fmt(out?.details?.preConversion, 3)}</div>
               <div>Conversion used: ×(100/17)</div>
             </div>
           </details>
 
-          <div className="text-xs text-gray-600">
-            Note: If the computed value is negative, the tool returns 0 lbs/ac.
-          </div>
+          <div className="text-xs text-gray-600">Note: If the computed value is negative, the tool returns 0 lbs/ac.</div>
         </div>
 
         <div className="mt-6">
