@@ -1,43 +1,41 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { runSo4Sulfur, type So4SulfurInput } from "@calc-engine/core";
 
 const SO4_GREEN = "#2E7D32";
 
-// Crop type that matches runSo4Sulfur()
+// ✅ Crop type that matches runSo4Sulfur()
 type Crop = So4SulfurInput["crop"];
+
+// ✅ Use the crop labels that so4_sulfur expects
 const CROPS: Crop[] = ["Corn", "Soybean", "Wheat", "Alfalfa"];
 
-// small formatter helper
-const fmt = (n: unknown, digits = 1) => {
-  const v = typeof n === "number" && Number.isFinite(n) ? n : undefined;
-  return v === undefined
-    ? "—"
-    : new Intl.NumberFormat(undefined, {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      }).format(v);
-};
+/* small helpers */
+const fmt = (n: number, dec = 0) =>
+  new Intl.NumberFormat(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
 
 export default function SO4SulfurRatePage() {
   const [crop, setCrop] = useState<Crop>("Corn");
   const [yieldGoal, setYieldGoal] = useState<number>(200);
-  const [sulfurPpm, setSulfurPpm] = useState<number>(0);
   const [omPct, setOmPct] = useState<number>(0);
+
+  // ✅ Removed from UI: Soil test sulfate-S (ppm)
+  // Hard-set to 0 so it has no effect.
+  const sulfurPpm = 0;
 
   const out = useMemo(
     () =>
       runSo4Sulfur({
         crop,
         yieldGoal: Number(yieldGoal),
-        sulfurPpm: Number(sulfurPpm),
+        sulfurPpm, // fixed constant
         organicMatterPct: Number(omPct),
       }),
-    [crop, yieldGoal, sulfurPpm, omPct]
+    [crop, yieldGoal, omPct]
   );
 
-  const recLbs = out?.rate_lbs_SO4_per_ac ?? 0;
+  const recLbs = out.rate_lbs_SO4_per_ac;
   const recTons = recLbs / 2000;
 
   const yieldUnit = crop === "Alfalfa" ? "tons/ac" : "bu/ac";
@@ -50,8 +48,8 @@ export default function SO4SulfurRatePage() {
       <section className="mx-auto max-w-3xl p-6">
         <h1 className="mb-2 text-2xl font-bold">SO4 Pelletized Gypsum — Sulfur Rate</h1>
         <p className="mb-4 text-sm text-gray-600">
-          Inputs: <b>Crop</b>, <b>Yield goal</b>, <b>Soil test sulfate-S (ppm)</b>, and <b>Organic matter (%)</b>. Output
-          is a <b>recommended SO4 product rate</b> (lbs/ac). Negative results are floored to 0.
+          Inputs: <b>Crop</b>, <b>Yield goal</b>, and <b>Organic matter (%)</b>.
+          Output is a <b>recommended SO4 product rate</b> (lbs/ac). Negative results are floored to 0.
         </p>
 
         {/* Inputs */}
@@ -85,19 +83,7 @@ export default function SO4SulfurRatePage() {
             />
           </label>
 
-          <label className="space-y-1">
-            <span className="text-sm text-gray-600">Sulfur (soil test, ppm)</span>
-            <input
-              type="number"
-              step={0.1}
-              min={0}
-              value={sulfurPpm}
-              onChange={(e) => setSulfurPpm(e.target.value === "" ? 0 : Number(e.target.value))}
-              className="h-9 w-full rounded border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-          </label>
-
-          <label className="space-y-1">
+          <label className="space-y-1 sm:col-span-2">
             <span className="text-sm text-gray-600">Organic matter (%)</span>
             <input
               type="number"
@@ -115,8 +101,10 @@ export default function SO4SulfurRatePage() {
         {/* Output */}
         <div className="grid gap-2">
           <div className="text-lg">
-            <b>Recommended SO4 rate:</b> {fmt(recLbs, 0)} <span className="text-gray-600">lb/ac</span>{" "}
-            <span className="text-gray-400">|</span> {fmt(recTons, 2)} <span className="text-gray-600">tons/ac</span>
+            <b>Recommended SO4 rate:</b>{" "}
+            {fmt(recLbs, 0)} <span className="text-gray-600">lb/ac</span>{" "}
+            <span className="text-gray-400">|</span>{" "}
+            {fmt(recTons, 2)} <span className="text-gray-600">tons/ac</span>
           </div>
 
           <details className="group">
@@ -124,15 +112,19 @@ export default function SO4SulfurRatePage() {
               Show calculation terms
             </summary>
             <div className="mt-2 grid gap-1 text-sm">
-              <div>Yield term: {fmt(out?.details?.yieldTerm, 3)}</div>
-              <div>S-ppm term: {fmt(out?.details?.sulfurTerm, 3)}</div>
-              <div>OM term: {fmt(out?.details?.omTerm, 3)}</div>
-              <div>Pre-conversion (S basis): {fmt(out?.details?.preConversion, 3)}</div>
+              <div>Yield term: {fmt(out.details.yieldTerm, 3)}</div>
+              <div>OM term: {fmt(out.details.omTerm, 3)}</div>
+              <div>Pre-conversion (S basis): {fmt(out.details.preConversion, 3)}</div>
               <div>Conversion used: ×(100/17)</div>
+              <div className="text-xs text-gray-500">
+                Soil test sulfate-S (ppm) is fixed at 0 in this web version.
+              </div>
             </div>
           </details>
 
-          <div className="text-xs text-gray-600">Note: If the computed value is negative, the tool returns 0 lbs/ac.</div>
+          <div className="text-xs text-gray-600">
+            Note: If the computed value is negative, the tool returns 0 lbs/ac.
+          </div>
         </div>
 
         <div className="mt-6">
