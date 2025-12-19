@@ -25,13 +25,13 @@ importers:
         version: 5.2.1(react-hook-form@7.62.0(react@19.1.2))
       next:
         specifier: 15.5.7
-        version: 15.5.7(react-dom@19.1.0(react@19.1.2))(react@19.1.2)
+        version: 15.5.7(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react:
         specifier: 19.1.2
         version: 19.1.2
       react-dom:
-        specifier: 19.1.0
-        version: 19.1.0(react@19.1.2)
+        specifier: 19.1.2
+        version: 19.1.2(react@19.1.2)
       react-hook-form:
         specifier: ^7.62.0
         version: 7.62.0(react@19.1.2)
@@ -1768,10 +1768,10 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
-  react-dom@19.1.0:
-    resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
+  react-dom@19.1.2:
+    resolution: {integrity: sha512-dEoydsCp50i7kS1xHOmPXq4zQYoGWedUsvqv9H6zdif2r7yLHygyfP9qou71TulRN0d6ng9EbRVsQhSqfUc19g==}
     peerDependencies:
-      react: ^19.1.0
+      react: ^19.1.2
 
   react-hook-form@7.62.0:
     resolution: {integrity: sha512-7KWFejc98xqG/F4bAxpL41NB3o1nnvQO1RWZT3TqRZYL8RryQETGfEdVnJN2fy1crCiBLLjkRBVK05j24FxJGA==}
@@ -3652,14 +3652,14 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next@15.5.7(react-dom@19.1.0(react@19.1.2))(react@19.1.2):
+  next@15.5.7(react-dom@19.1.2(react@19.1.2))(react@19.1.2):
     dependencies:
       '@next/env': 15.5.7
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001743
       postcss: 8.4.31
       react: 19.1.2
-      react-dom: 19.1.0(react@19.1.2)
+      react-dom: 19.1.2(react@19.1.2)
       styled-jsx: 5.1.6(react@19.1.2)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.5.7
@@ -3788,7 +3788,7 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-dom@19.1.0(react@19.1.2):
+  react-dom@19.1.2(react@19.1.2):
     dependencies:
       react: 19.1.2
       scheduler: 0.26.0
