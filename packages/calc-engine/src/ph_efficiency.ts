@@ -5,7 +5,7 @@
  * - $ at risk + utilization emphasis: N/P/K only (S excluded by platform spec)
  */
 
-export type Crop = "Corn Grain" | "Soybean" | "Wheat" | "Alfalfa";
+export type Crop = "Corn Grain" | "Soybeans" | "Wheat" | "Alfalfa";
 export type Nutrient = "N" | "P2O5" | "K2O" | "S";
 
 export type FertilizerId =
@@ -46,7 +46,7 @@ export interface FertChoice {
 
 export interface RunInput {
   crop: Crop;
-  yieldGoal: number; // bu/ac (Alfalfa = ton/ac)
+  yieldGoal: number; // bushel/acre for Corn Grain, Soybeans, Wheat; ton/acre for Alfalfa
   soil_pH: number; // snapped to ALLOWED_PHS internally
   n: FertChoice;
   p: FertChoice;
@@ -57,13 +57,13 @@ export interface RunInput {
 export interface EfficiencyRow {
   nutrient: Nutrient;
   needed_lb_ac: number;
-  supplied_lb_ac: number; // we size to meet removal
-  utilization_frac: number; // from pH curve
-  rate_lb_ac: number; // product rate used for this nutrient
-  cost_per_ac: number; // $/A for this nutrient’s product
-  atRiskDollarsPerAc: number; // cost * (1 - utilization) [S excluded in totals by spec]
+  supplied_lb_ac: number;
+  utilization_frac: number;
+  rate_lb_ac: number;
+  cost_per_ac: number;
+  atRiskDollarsPerAc: number;
   fertilizer: FertilizerId;
-  analysis_pct: number; // percent of that nutrient in that product
+  analysis_pct: number;
 }
 
 export interface FertRow {
@@ -78,16 +78,13 @@ export interface FertRow {
 }
 
 export interface RunOutput {
-  rows: EfficiencyRow[]; // one per nutrient (N,P,K,S)
-  fertRows: FertRow[]; // one per selected product (N,P,K,S)
+  rows: EfficiencyRow[];
+  fertRows: FertRow[];
   suppliedTotals: { N: number; P2O5: number; K2O: number; S: number };
 
   totalCostPerAc: number;
-
-  // Spec: show $ at risk due to soil pH for N/P/K only (exclude S)
   totalAtRiskDollarsPerAc: number;
 
-  // convenience for UI tiles (N/P/K only)
   cards: {
     N: { util: number; atRisk: number; cost: number };
     P: { util: number; atRisk: number; cost: number };
@@ -101,32 +98,36 @@ export interface RunOutput {
 
 export const ALLOWED_PHS = [5.0, 5.2, 5.4, 5.6, 5.8, 6.0, 6.3, 6.5, 6.8] as const;
 
-/** Crop removal per unit yield (bu/ac; Alfalfa = ton/ac). */
+/**
+ * Crop removal per unit yield.
+ * - Corn Grain, Soybeans, Wheat = per bushel
+ * - Alfalfa = per ton
+ */
 const CROP_REMOVAL: Record<Crop, { N: number; P2O5: number; K2O: number; S: number }> = {
   "Corn Grain": { N: 1.0, P2O5: 0.32, K2O: 0.22, S: 0.08 },
-  Soybean: { N: 0.0, P2O5: 0.80, K2O: 1.40, S: 0.10 }, // placeholders
-  Wheat: { N: 1.2, P2O5: 0.60, K2O: 0.35, S: 0.08 }, // placeholders
-  Alfalfa: { N: 0.0, P2O5: 1.30, K2O: 5.50, S: 0.25 }, // per ton, placeholders
+  Soybeans: { N: 0.0, P2O5: 0.8, K2O: 1.4, S: 0.1 },
+  Wheat: { N: 1.2, P2O5: 0.6, K2O: 0.35, S: 0.08 },
+  Alfalfa: { N: 0.0, P2O5: 1.3, K2O: 5.5, S: 0.25 },
 };
 
 /** Utilization (efficiency) per nutrient by soil pH. */
 const EFFICIENCY: Record<(typeof ALLOWED_PHS)[number], Record<Nutrient, number>> = {
   5.0: { N: 0.53, P2O5: 0.34, K2O: 0.52, S: 0.85 },
-  5.2: { N: 0.58, P2O5: 0.40, K2O: 0.55, S: 0.86 },
+  5.2: { N: 0.58, P2O5: 0.4, K2O: 0.55, S: 0.86 },
   5.4: { N: 0.63, P2O5: 0.48, K2O: 0.58, S: 0.88 },
-  5.6: { N: 0.68, P2O5: 0.57, K2O: 0.63, S: 0.90 },
-  5.8: { N: 0.73, P2O5: 0.66, K2O: 0.70, S: 0.92 },
+  5.6: { N: 0.68, P2O5: 0.57, K2O: 0.63, S: 0.9 },
+  5.8: { N: 0.73, P2O5: 0.66, K2O: 0.7, S: 0.92 },
   6.0: { N: 0.78, P2O5: 0.75, K2O: 0.78, S: 0.95 },
   6.3: { N: 0.85, P2O5: 0.86, K2O: 0.88, S: 0.98 },
-  6.5: { N: 0.90, P2O5: 0.92, K2O: 0.93, S: 1.00 },
-  6.8: { N: 0.95, P2O5: 0.96, K2O: 0.96, S: 1.00 },
+  6.5: { N: 0.9, P2O5: 0.92, K2O: 0.93, S: 1.0 },
+  6.8: { N: 0.95, P2O5: 0.96, K2O: 0.96, S: 1.0 },
 };
 
 /** Catalog with strict “primary” nutrient so dropdowns show only intended choices. */
 export type FertEntry = {
   label: string;
   analysis: { N: number; P2O5: number; K2O: number; S: number };
-  primary: Nutrient[]; // which selector(s) show it (strict!)
+  primary: Nutrient[];
   defaultPrice: number;
 };
 
@@ -165,7 +166,6 @@ export const FERT_CATALOG: Record<FertilizerId, FertEntry> = {
   S85: { label: "Elemental Sulfur 85%", analysis: { N: 0, P2O5: 0, K2O: 0, S: 85 }, primary: ["S"], defaultPrice: 380 },
 };
 
-/** For dropdowns (STRICT: uses catalog.primary) */
 export function listFertilizersFor(nutrient: Nutrient): { id: FertilizerId; label: string }[] {
   return (Object.keys(FERT_CATALOG) as FertilizerId[])
     .filter((id) => FERT_CATALOG[id].primary.includes(nutrient))
@@ -188,7 +188,7 @@ function snapPH(pH: number): (typeof ALLOWED_PHS)[number] {
   for (const v of ALLOWED_PHS) {
     const d = Math.abs(pH - v);
     if (d < dBest) {
-      best = v;   
+      best = v;
       dBest = d;
     }
   }
@@ -231,7 +231,6 @@ export function runPhEfficiency(input: RunInput): RunOutput {
   const Kf = FERT_CATALOG[input.k.id];
   const Sf = FERT_CATALOG[input.s.id];
 
-  // Defensive guard (prevents any "undefined.analysis" runtime crash if IDs ever drift)
   if (!Nf) throw new Error(`[ph_efficiency] Unknown N fertilizer id: ${input.n.id}`);
   if (!Pf) throw new Error(`[ph_efficiency] Unknown P fertilizer id: ${input.p.id}`);
   if (!Kf) throw new Error(`[ph_efficiency] Unknown K fertilizer id: ${input.k.id}`);
@@ -330,7 +329,6 @@ export function runPhEfficiency(input: RunInput): RunOutput {
 
   const totalCostPerAc = r2(costN + costP + costK + costS);
 
-  // Spec: N/P/K only for dollars-at-risk summary
   const nRow = rows.find((r) => r.nutrient === "N")!;
   const pRow = rows.find((r) => r.nutrient === "P2O5")!;
   const kRow = rows.find((r) => r.nutrient === "K2O")!;

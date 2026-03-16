@@ -1,4 +1,3 @@
-// apps/web/app/page.tsx
 import Link from "next/link";
 import Image from "next/image";
 
@@ -8,16 +7,26 @@ type TileProps = {
   subtitle: string;
   logoSrc: string;
   logoAlt: string;
+  accentColor: string;
 };
 
-function ProductTile({ href, title, subtitle, logoSrc, logoAlt }: TileProps) {
+function ProductTile({
+  href,
+  title,
+  subtitle,
+  logoSrc,
+  logoAlt,
+  accentColor,
+}: TileProps) {
   return (
     <Link
       href={href}
       className="group relative flex items-center gap-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
     >
-      {/* top red accent on hover */}
-      <span className="pointer-events-none absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-[#B21F2D] opacity-0 transition-opacity group-hover:opacity-100" />
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-1 rounded-t-2xl opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ backgroundColor: accentColor }}
+      />
 
       <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-50 ring-1 ring-gray-200">
         <Image
@@ -33,7 +42,10 @@ function ProductTile({ href, title, subtitle, logoSrc, logoAlt }: TileProps) {
       <div>
         <div className="text-xl font-semibold text-gray-900">{title}</div>
         <div className="text-sm text-gray-600">{subtitle}</div>
-        <div className="mt-1 text-sm text-[#B21F2D] group-hover:underline">
+        <div
+          className="mt-1 text-sm group-hover:underline"
+          style={{ color: accentColor }}
+        >
           Go to Calculators →
         </div>
       </div>
@@ -44,14 +56,12 @@ function ProductTile({ href, title, subtitle, logoSrc, logoAlt }: TileProps) {
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* slim brand bar */}
       <div className="h-2 w-full bg-[#B21F2D]" />
 
       <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-12 pt-8">
-        {/* Bigger company logo */}
         <div className="mb-6">
           <Image
-            src="/logos/cplogo.png" // change to .jpg if that's your file
+            src="/logos/cplogo.png"
             alt="Calcium Products"
             width={720}
             height={220}
@@ -66,7 +76,6 @@ export default function Home() {
           Choose a product to open its calculators.
         </p>
 
-        {/* subtle gray panel behind tiles for depth */}
         <div className="w-full rounded-3xl bg-gray-100/70 p-5">
           <div className="grid w-full gap-6 sm:grid-cols-2">
             <ProductTile
@@ -75,13 +84,15 @@ export default function Home() {
               subtitle="Pelletized Limestone"
               logoSrc="/logos/98g.png"
               logoAlt="98G"
+              accentColor="#B21F2D"
             />
             <ProductTile
               href="/so4"
               title="SO4"
-              subtitle="Pelltized Gypsum"
+              subtitle="Pelletized Gypsum"
               logoSrc="/logos/so4.png"
               logoAlt="SO4"
+              accentColor="#2E7D32"
             />
           </div>
         </div>

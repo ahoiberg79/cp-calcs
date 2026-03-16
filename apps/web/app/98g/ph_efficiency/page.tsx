@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ALLOWED_PHS,
   DEFAULT_PRICE,
@@ -11,14 +11,32 @@ import {
   type RunInput,
 } from "@calc-engine/core";
 
-const SO4_RED = "#B21F2D";
+const BRAND_RED = "#B21F2D";
 
-const CROPS: Crop[] = ["Corn Grain", "Soybean", "Wheat", "Alfalfa"];
+const CROPS: Crop[] = ["Corn Grain", "Soybeans", "Wheat", "Alfalfa"];
 
-const fmt1 = (n: number) => n.toFixed(1);
-const fmt2 = (n: number) => n.toFixed(2);
+const DEFAULT_YIELD_BY_CROP: Record<Crop, number> = {
+  "Corn Grain": 200,
+  Soybeans: 70,
+  Wheat: 60,
+  Alfalfa: 5,
+};
+
+const YIELD_UNIT_BY_CROP: Record<Crop, string> = {
+  "Corn Grain": "bushels/acre",
+  Soybeans: "bushels/acre",
+  Wheat: "bushels/acre",
+  Alfalfa: "tons/acre",
+};
+
+const rateDisplay = (n: number) => Math.round(n).toString();
+const supplyDisplay = (n: number) => Math.round(n).toString();
 const money0 = (n: number) =>
-  new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(n);
 
 type ChoiceState = { id: FertilizerId; price: number };
 
@@ -39,22 +57,23 @@ function Tile(props: { title: string; value: string; highlight?: boolean; sub?: 
 
 export default function PhEfficiencyPage() {
   const [crop, setCrop] = useState<Crop>("Corn Grain");
-  const [yieldGoal, setYieldGoal] = useState<number>(225);
+  const [yieldGoal, setYieldGoal] = useState<number>(DEFAULT_YIELD_BY_CROP["Corn Grain"]);
   const [soilPH, setSoilPH] = useState<number>(ALLOWED_PHS[0]);
 
-  // STRICT menus from engine (primary nutrient only)
   const N_OPTIONS = useMemo(() => listFertilizersFor("N"), []);
   const P_OPTIONS = useMemo(() => listFertilizersFor("P2O5"), []);
   const K_OPTIONS = useMemo(() => listFertilizersFor("K2O"), []);
   const S_OPTIONS = useMemo(() => listFertilizersFor("S"), []);
 
-  // initialize to first valid option in each list
   const [n, setN] = useState<ChoiceState>(() => ({ id: N_OPTIONS[0].id, price: DEFAULT_PRICE[N_OPTIONS[0].id] }));
   const [p, setP] = useState<ChoiceState>(() => ({ id: P_OPTIONS[0].id, price: DEFAULT_PRICE[P_OPTIONS[0].id] }));
   const [k, setK] = useState<ChoiceState>(() => ({ id: K_OPTIONS[0].id, price: DEFAULT_PRICE[K_OPTIONS[0].id] }));
   const [s, setS] = useState<ChoiceState>(() => ({ id: S_OPTIONS[0].id, price: DEFAULT_PRICE[S_OPTIONS[0].id] }));
 
-  // keep price in sync when product changes
+  useEffect(() => {
+    setYieldGoal(DEFAULT_YIELD_BY_CROP[crop]);
+  }, [crop]);
+
   const onSelect =
     (setter: (c: ChoiceState) => void) =>
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -75,18 +94,29 @@ export default function PhEfficiencyPage() {
     return runPhEfficiency(input);
   }, [crop, yieldGoal, soilPH, n, p, k, s]);
 
+  const yieldUnit = YIELD_UNIT_BY_CROP[crop];
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="h-2 w-full" style={{ backgroundColor: SO4_RED }} />
+      <div className="h-2 w-full" style={{ backgroundColor: BRAND_RED }} />
 
       <section className="mx-auto max-w-6xl px-6 pb-12 pt-8">
-        <h1 className="mb-2 text-2xl font-bold">pH Efficiency — Fertilizer Dollars at Risk</h1>
+        <div className="mb-6">
+          <a
+            href="/98g"
+            className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+          >
+            Back to 98G Calculators
+          </a>
+        </div>
+
+        <h1 className="mb-2 text-2xl font-bold text-gray-900">Soil pH Nutrient Efficiency Calculator</h1>
         <p className="mb-6 max-w-4xl text-sm text-gray-700">
-          We size P/K/S to crop removal, then size <b>N</b> after crediting N contributed by those sources.
-          Utilization is pH-based. <b>Phosphorus</b> is emphasized. (Platform rule: $ at risk summary excludes S.)
+          This calculator estimates fertilizer cost at risk due to reduced nutrient efficiency at suboptimal soil pH.
+          Phosphate, potash, and sulfur are sized to crop removal first, then nitrogen is sized after crediting nitrogen
+          supplied by the selected phosphate, potash, and sulfur products.
         </p>
 
-        {/* Inputs */}
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           <label className="space-y-1">
             <span className="text-sm text-gray-700">Crop</span>
@@ -104,7 +134,7 @@ export default function PhEfficiencyPage() {
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm text-gray-700">Yield goal</span>
+            <span className="text-sm text-gray-700">Yield Goal ({yieldUnit})</span>
             <input
               type="number"
               step={1}
@@ -131,42 +161,35 @@ export default function PhEfficiencyPage() {
           </label>
         </div>
 
-        {/* Product pickers */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          {/** N */}
-          <Picker title="N source" value={n} setValue={setN} options={N_OPTIONS} onSelect={onSelect} />
-          {/** P */}
-          <Picker title="P source" value={p} setValue={setP} options={P_OPTIONS} onSelect={onSelect} />
-          {/** K */}
-          <Picker title="K source" value={k} setValue={setK} options={K_OPTIONS} onSelect={onSelect} />
-          {/** S */}
-          <Picker title="S source" value={s} setValue={setS} options={S_OPTIONS} onSelect={onSelect} />
+          <Picker title="Nitrogen Fertilizer" value={n} setValue={setN} options={N_OPTIONS} onSelect={onSelect} />
+          <Picker title="Phosphate Fertilizer" value={p} setValue={setP} options={P_OPTIONS} onSelect={onSelect} />
+          <Picker title="Potash Fertilizer" value={k} setValue={setK} options={K_OPTIONS} onSelect={onSelect} />
+          <Picker title="Sulfur Fertilizer" value={s} setValue={setS} options={S_OPTIONS} onSelect={onSelect} />
         </div>
 
-        {/* Summary tiles */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Tile title="Total cost ($/A)" value={money0(out.totalCostPerAc)} />
-          <Tile title="$ at risk ($/A) — N/P/K only" value={money0(out.totalAtRiskDollarsPerAc)} />
+          <Tile title="Total Cost ($/acre)" value={money0(out.totalCostPerAc)} />
+          <Tile title="Total Dollars at Risk" value={money0(out.totalAtRiskDollarsPerAc)} />
           <Tile
-            title="P utilization"
+            title="Phosphate Utilization"
             value={`${Math.round(out.cards.P.util * 100)}%`}
-            sub="pH-driven utilization factor"
+            sub="Based on selected soil pH"
             highlight
           />
         </div>
 
-        {/* Fertilizer detail table (no utilization / at risk columns) */}
         <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
-                <th className="px-3 py-2 text-left w-[34%]">Fertilizer used</th>
-                <th className="px-2 py-2 text-right">Rate (lb/A)</th>
-                <th className="px-2 py-2 text-right">N supplied</th>
-                <th className="px-2 py-2 text-right">P₂O₅ supplied</th>
-                <th className="px-2 py-2 text-right">K₂O supplied</th>
-                <th className="px-2 py-2 text-right">S supplied</th>
-                <th className="px-2 py-2 text-right">Cost ($/A)</th>
+                <th className="w-[34%] px-3 py-2 text-left">Fertilizer Used</th>
+                <th className="px-2 py-2 text-right">Rate Required (lb/acre)</th>
+                <th className="px-2 py-2 text-right">N Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">P2O5 Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">K2O Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">S Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">Cost ($/acre)</th>
               </tr>
             </thead>
             <tbody>
@@ -175,44 +198,45 @@ export default function PhEfficiencyPage() {
                 return (
                   <tr key={fr.id} className={`border-t ${stripe}`}>
                     <td className="px-3 py-2 font-medium">{fr.label}</td>
-                    <td className="px-2 py-2 text-right">{fmt1(fr.rate_lb_ac)}</td>
-                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.N)}</td>
-                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.P2O5)}</td>
-                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.K2O)}</td>
-                    <td className="px-2 py-2 text-right">{fmt1(fr.supplied_lb_ac.S)}</td>
+                    <td className="px-2 py-2 text-right">{rateDisplay(fr.rate_lb_ac)}</td>
+                    <td className="px-2 py-2 text-right">{supplyDisplay(fr.supplied_lb_ac.N)}</td>
+                    <td className="px-2 py-2 text-right">{supplyDisplay(fr.supplied_lb_ac.P2O5)}</td>
+                    <td className="px-2 py-2 text-right">{supplyDisplay(fr.supplied_lb_ac.K2O)}</td>
+                    <td className="px-2 py-2 text-right">{supplyDisplay(fr.supplied_lb_ac.S)}</td>
                     <td className="px-2 py-2 text-right">{money0(fr.cost_per_ac)}</td>
                   </tr>
                 );
               })}
               <tr className="border-t bg-gray-50 font-semibold">
-                <td className="px-3 py-2">Totals supplied</td>
+                <td className="px-3 py-2">Totals Supplied</td>
                 <td className="px-2 py-2 text-right">—</td>
-                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.N)}</td>
-                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.P2O5)}</td>
-                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.K2O)}</td>
-                <td className="px-2 py-2 text-right">{fmt1(out.suppliedTotals.S)}</td>
+                <td className="px-2 py-2 text-right">{supplyDisplay(out.suppliedTotals.N)}</td>
+                <td className="px-2 py-2 text-right">{supplyDisplay(out.suppliedTotals.P2O5)}</td>
+                <td className="px-2 py-2 text-right">{supplyDisplay(out.suppliedTotals.K2O)}</td>
+                <td className="px-2 py-2 text-right">{supplyDisplay(out.suppliedTotals.S)}</td>
                 <td className="px-2 py-2 text-right">{money0(out.totalCostPerAc)}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* Utilization / at-risk tiles (N / P / K only) */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Tile title="N utilization" value={`${Math.round(out.cards.N.util * 100)}%`} sub={`At risk: ${money0(out.cards.N.atRisk)}`} />
           <Tile
-            title="P utilization"
-            value={`${Math.round(out.cards.P.util * 100)}%`}
-            sub={`At risk: ${money0(out.cards.P.atRisk)}`}
+            title="N Dollars at Risk"
+            value={money0(out.cards.N.atRisk)}
+            sub={`Utilization: ${Math.round(out.cards.N.util * 100)}%`}
+          />
+          <Tile
+            title="P Dollars at Risk"
+            value={money0(out.cards.P.atRisk)}
+            sub={`Utilization: ${Math.round(out.cards.P.util * 100)}%`}
             highlight
           />
-          <Tile title="K utilization" value={`${Math.round(out.cards.K.util * 100)}%`} sub={`At risk: ${money0(out.cards.K.atRisk)}`} />
-        </div>
-
-        <div className="mt-8">
-          <a href="/98g" className="text-sm text-blue-600 hover:underline">
-            ← Back to 98G calculators
-          </a>
+          <Tile
+            title="K Dollars at Risk"
+            value={money0(out.cards.K.atRisk)}
+            sub={`Utilization: ${Math.round(out.cards.K.util * 100)}%`}
+          />
         </div>
       </section>
     </main>
@@ -228,7 +252,8 @@ function Picker(props: {
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="mb-1 text-sm font-medium">{props.title}</div>
+      <div className="mb-1 text-sm font-medium text-gray-900">{props.title}</div>
+
       <select
         value={props.value.id}
         onChange={props.onSelect(props.setValue)}
@@ -257,7 +282,7 @@ function Picker(props: {
         onClick={() => props.setValue({ ...props.value, price: DEFAULT_PRICE[props.value.id] ?? 0 })}
         className="mt-2 text-xs text-blue-600 hover:underline"
       >
-        Reset to default
+        Reset to Default
       </button>
     </div>
   );
