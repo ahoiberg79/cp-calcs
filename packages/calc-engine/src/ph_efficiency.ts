@@ -46,7 +46,7 @@ export interface FertChoice {
 
 export interface RunInput {
   crop: Crop;
-  yieldGoal: number; // bushel/acre for Corn Grain, Soybeans, Wheat; ton/acre for Alfalfa
+  yieldGoal: number; // bushels/acre for Corn Grain, Soybeans, Wheat; tons/acre for Alfalfa
   soil_pH: number; // snapped to ALLOWED_PHS internally
   n: FertChoice;
   p: FertChoice;
@@ -123,7 +123,6 @@ const EFFICIENCY: Record<(typeof ALLOWED_PHS)[number], Record<Nutrient, number>>
   6.8: { N: 0.95, P2O5: 0.96, K2O: 0.96, S: 1.0 },
 };
 
-/** Catalog with strict “primary” nutrient so dropdowns show only intended choices. */
 export type FertEntry = {
   label: string;
   analysis: { N: number; P2O5: number; K2O: number; S: number };
@@ -133,37 +132,164 @@ export type FertEntry = {
 
 export const FERT_CATALOG: Record<FertilizerId, FertEntry> = {
   // N
-  NH3: { label: "Anhydrous Ammonia (82-0-0)", analysis: { N: 82, P2O5: 0, K2O: 0, S: 0 }, primary: ["N"], defaultPrice: 550 },
-  Urea46: { label: "Urea (46-0-0)", analysis: { N: 46, P2O5: 0, K2O: 0, S: 0 }, primary: ["N"], defaultPrice: 500 },
-  UAN32: { label: "32% UAN (32-0-0)", analysis: { N: 32, P2O5: 0, K2O: 0, S: 0 }, primary: ["N"], defaultPrice: 350 },
-  UAN28: { label: "28% UAN (28-0-0)", analysis: { N: 28, P2O5: 0, K2O: 0, S: 0 }, primary: ["N"], defaultPrice: 330 },
-  AN34: { label: "Ammonium Nitrate (34-0-0)", analysis: { N: 34, P2O5: 0, K2O: 0, S: 0 }, primary: ["N"], defaultPrice: 520 },
+  NH3: {
+    label: "Anhydrous Ammonia (82-0-0)",
+    analysis: { N: 82, P2O5: 0, K2O: 0, S: 0 },
+    primary: ["N"],
+    defaultPrice: 550,
+  },
+  Urea46: {
+    label: "Urea (46-0-0)",
+    analysis: { N: 46, P2O5: 0, K2O: 0, S: 0 },
+    primary: ["N"],
+    defaultPrice: 500,
+  },
+  UAN32: {
+    label: "32% UAN (32-0-0)",
+    analysis: { N: 32, P2O5: 0, K2O: 0, S: 0 },
+    primary: ["N"],
+    defaultPrice: 350,
+  },
+  UAN28: {
+    label: "28% UAN (28-0-0)",
+    analysis: { N: 28, P2O5: 0, K2O: 0, S: 0 },
+    primary: ["N"],
+    defaultPrice: 330,
+  },
+  AN34: {
+    label: "Ammonium Nitrate (34-0-0)",
+    analysis: { N: 34, P2O5: 0, K2O: 0, S: 0 },
+    primary: ["N"],
+    defaultPrice: 520,
+  },
 
   // P
-  "MAP11-52": { label: "Monoammonium Phosphate (MAP 11-52-0)", analysis: { N: 11, P2O5: 52, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 850 },
-  "DAP18-46": { label: "Diammonium Phosphate (DAP 18-46-0)", analysis: { N: 18, P2O5: 46, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 820 },
-  "APP10-34": { label: "Ammonium Polyphosphate (10-34-0)", analysis: { N: 10, P2O5: 34, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 780 },
-  "MES-S10": { label: "MicroEssentials S10 (12-40-0-10S)", analysis: { N: 12, P2O5: 40, K2O: 0, S: 10 }, primary: ["P2O5"], defaultPrice: 900 },
-  "MES-S15": { label: "MicroEssentials S15 (13-33-0-15S)", analysis: { N: 13, P2O5: 33, K2O: 0, S: 15 }, primary: ["P2O5"], defaultPrice: 900 },
-  "MES-SZ": { label: "MicroEssentials SZ (12-40-0-10S)", analysis: { N: 12, P2O5: 40, K2O: 0, S: 10 }, primary: ["P2O5"], defaultPrice: 900 },
-  Rock40: { label: "40 Rock (0-28-0)", analysis: { N: 0, P2O5: 28, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 500 },
-  SSP: { label: "Single Superphosphate (0-20-0-12S)", analysis: { N: 0, P2O5: 20, K2O: 0, S: 12 }, primary: ["P2O5"], defaultPrice: 520 },
-  TSP: { label: "Triple Superphosphate (0-46-0)", analysis: { N: 0, P2O5: 46, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 780 },
-  "Croplex12-40": { label: "Croplex 12-40-0", analysis: { N: 12, P2O5: 40, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 880 },
-  "Croplex13-33": { label: "Croplex 13-33-0", analysis: { N: 13, P2O5: 33, K2O: 0, S: 0 }, primary: ["P2O5"], defaultPrice: 870 },
+  "MAP11-52": {
+    label: "Monoammonium Phosphate (11-52-0)",
+    analysis: { N: 11, P2O5: 52, K2O: 0, S: 0 },
+    primary: ["P2O5"],
+    defaultPrice: 850,
+  },
+  "DAP18-46": {
+    label: "Diammonium Phosphate (18-46-0)",
+    analysis: { N: 18, P2O5: 46, K2O: 0, S: 0 },
+    primary: ["P2O5"],
+    defaultPrice: 820,
+  },
+  "APP10-34": {
+    label: "Ammonium Polyphosphate (10-34-0)",
+    analysis: { N: 10, P2O5: 34, K2O: 0, S: 0 },
+    primary: ["P2O5"],
+    defaultPrice: 780,
+  },
+  "MES-S10": {
+    label: "Co-Granulated (12-40-0-10S)",
+    analysis: { N: 12, P2O5: 40, K2O: 0, S: 10 },
+    primary: ["P2O5"],
+    defaultPrice: 900,
+  },
+  "MES-S15": {
+    label: "Co-Granulated (13-33-0-15S)",
+    analysis: { N: 13, P2O5: 33, K2O: 0, S: 15 },
+    primary: ["P2O5"],
+    defaultPrice: 900,
+  },
+  "MES-SZ": {
+    label: "Co-Granulated (12-40-0-10S-1Zn)",
+    analysis: { N: 12, P2O5: 40, K2O: 0, S: 10 },
+    primary: ["P2O5"],
+    defaultPrice: 900,
+  },
+  Rock40: {
+    label: "Co-Granulated (12-40-0-6.5S-1Zn)",
+    analysis: { N: 12, P2O5: 40, K2O: 0, S: 6.5 },
+    primary: ["P2O5"],
+    defaultPrice: 500,
+  },
+  SSP: {
+    label: "Single Superphosphate (0-20-0-12S)",
+    analysis: { N: 0, P2O5: 20, K2O: 0, S: 12 },
+    primary: ["P2O5"],
+    defaultPrice: 520,
+  },
+  TSP: {
+    label: "Triple Superphosphate (0-46-0)",
+    analysis: { N: 0, P2O5: 46, K2O: 0, S: 0 },
+    primary: ["P2O5"],
+    defaultPrice: 780,
+  },
+
+  // Hidden duplicates kept in catalog for reference / future use
+  "Croplex12-40": {
+    label: "Co-Granulated (12-40-0-10S)",
+    analysis: { N: 12, P2O5: 40, K2O: 0, S: 10 },
+    primary: [],
+    defaultPrice: 880,
+  },
+  "Croplex13-33": {
+    label: "Co-Granulated (13-33-0-15S)",
+    analysis: { N: 13, P2O5: 33, K2O: 0, S: 15 },
+    primary: [],
+    defaultPrice: 870,
+  },
 
   // K
-  KCl60: { label: "Potassium Chloride 60%", analysis: { N: 0, P2O5: 0, K2O: 60, S: 0 }, primary: ["K2O"], defaultPrice: 400 },
-  KCl62: { label: "Potassium Chloride 62%", analysis: { N: 0, P2O5: 0, K2O: 62, S: 0 }, primary: ["K2O"], defaultPrice: 420 },
-  K2SO4: { label: "Potassium Sulfate (0-0-50-18S)", analysis: { N: 0, P2O5: 0, K2O: 50, S: 18 }, primary: ["K2O"], defaultPrice: 600 },
-  KTS: { label: "Potassium Thiosulfate (0-0-25-17S)", analysis: { N: 0, P2O5: 0, K2O: 25, S: 17 }, primary: ["K2O"], defaultPrice: 580 },
+  KCl60: {
+    label: "Potassium Chloride 60%",
+    analysis: { N: 0, P2O5: 0, K2O: 60, S: 0 },
+    primary: ["K2O"],
+    defaultPrice: 400,
+  },
+  KCl62: {
+    label: "Potassium Chloride 62%",
+    analysis: { N: 0, P2O5: 0, K2O: 62, S: 0 },
+    primary: ["K2O"],
+    defaultPrice: 420,
+  },
+  K2SO4: {
+    label: "Potassium Sulfate (0-0-50-18S)",
+    analysis: { N: 0, P2O5: 0, K2O: 50, S: 18 },
+    primary: ["K2O"],
+    defaultPrice: 600,
+  },
+  KTS: {
+    label: "Potassium Thiosulfate (0-0-25-17S)",
+    analysis: { N: 0, P2O5: 0, K2O: 25, S: 17 },
+    primary: ["K2O"],
+    defaultPrice: 580,
+  },
 
   // S
-  AMS: { label: "Ammonium Sulfate (21-0-0-24S)", analysis: { N: 21, P2O5: 0, K2O: 0, S: 24 }, primary: ["S"], defaultPrice: 550 },
-  ATS: { label: "Ammonium Thiosulfate (12-0-0-26S)", analysis: { N: 12, P2O5: 0, K2O: 0, S: 26 }, primary: ["S"], defaultPrice: 520 },
-  SO4: { label: "SO4 Pelletized Gypsum (0-0-0-17S)", analysis: { N: 0, P2O5: 0, K2O: 0, S: 17 }, primary: ["S"], defaultPrice: 150 },
-  S90: { label: "Elemental Sulfur 90%", analysis: { N: 0, P2O5: 0, K2O: 0, S: 90 }, primary: ["S"], defaultPrice: 400 },
-  S85: { label: "Elemental Sulfur 85%", analysis: { N: 0, P2O5: 0, K2O: 0, S: 85 }, primary: ["S"], defaultPrice: 380 },
+  AMS: {
+    label: "Ammonium Sulfate (21-0-0-24S)",
+    analysis: { N: 21, P2O5: 0, K2O: 0, S: 24 },
+    primary: ["S"],
+    defaultPrice: 550,
+  },
+  ATS: {
+    label: "Ammonium Thiosulfate (12-0-0-26S)",
+    analysis: { N: 12, P2O5: 0, K2O: 0, S: 26 },
+    primary: ["S"],
+    defaultPrice: 520,
+  },
+  SO4: {
+    label: "SO4 Pelletized Gypsum (0-0-0-17S)",
+    analysis: { N: 0, P2O5: 0, K2O: 0, S: 17 },
+    primary: ["S"],
+    defaultPrice: 150,
+  },
+  S90: {
+    label: "Elemental Sulfur 90%",
+    analysis: { N: 0, P2O5: 0, K2O: 0, S: 90 },
+    primary: ["S"],
+    defaultPrice: 400,
+  },
+  S85: {
+    label: "Elemental Sulfur 85%",
+    analysis: { N: 0, P2O5: 0, K2O: 0, S: 85 },
+    primary: ["S"],
+    defaultPrice: 380,
+  },
 };
 
 export function listFertilizersFor(nutrient: Nutrient): { id: FertilizerId; label: string }[] {
@@ -203,7 +329,10 @@ function dollarsPerA(rateLbAc: number, pricePerTon: number) {
   return (rateLbAc / 2000) * pricePerTon;
 }
 
-function unitsSupplied(analysis: { N: number; P2O5: number; K2O: number; S: number }, rate: number) {
+function unitsSupplied(
+  analysis: { N: number; P2O5: number; K2O: number; S: number },
+  rate: number
+) {
   return {
     N: (analysis.N / 100) * rate,
     P2O5: (analysis.P2O5 / 100) * rate,
@@ -236,7 +365,6 @@ export function runPhEfficiency(input: RunInput): RunOutput {
   if (!Kf) throw new Error(`[ph_efficiency] Unknown K fertilizer id: ${input.k.id}`);
   if (!Sf) throw new Error(`[ph_efficiency] Unknown S fertilizer id: ${input.s.id}`);
 
-  // Size P/K/S first, then credit their N to reduce the N rate.
   const rP = rateFromPct(Pf.analysis.P2O5, need.P2O5);
   const rK = rateFromPct(Kf.analysis.K2O, need.K2O);
   const rS = rateFromPct(Sf.analysis.S, need.S);

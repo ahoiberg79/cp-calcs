@@ -262,6 +262,12 @@ export default function SO4HighMgPage() {
                 amendment factor built into the calculator.
               </p>
               <p>
+                Yearly application rates should be based on economic and operational
+                considerations. In general, rates in excess of 600 lb/acre will not be 
+                practical for economic and logistical reasons. Rates in excess of 600
+                lb/acre can be split over multiple years.
+              </p>
+              <p>
                 Caution should be taken with soil CEC values less than 10 meq/100g as 
                 excessive application rates of gypsum on low CEC soils can result in cation
                 imbalance.
@@ -294,7 +300,7 @@ export default function SO4HighMgPage() {
           />
 
           <div className="mb-4 text-center text-lg font-semibold text-gray-900">
-            Recommended SO4 Rate
+            SO4 Needed to Achieve Desired Level
           </div>
 
           <div className="flex justify-center">

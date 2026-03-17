@@ -77,6 +77,12 @@ export default function SO4SodicPage() {
             and either sodium ppm or % Na. The calculator normalizes sodium to a
             % Na basis, then converts exchangeable sodium to an SO4 requirement.
           </p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-600">
+            Yearly application rates should be based on economic and operational
+            considerations. In general, rates in excess of 600 lb/acre will not be 
+            practical for economic and logistical reasons. Rates in excess of 600
+            lb/acre can be split over multiple years.
+          </p>
         </header>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -206,7 +212,7 @@ export default function SO4SodicPage() {
           />
 
           <div className="mb-4 text-center text-lg font-semibold text-gray-900">
-            Recommended SO4 Rate
+            SO4 Needed to Achieve Desired Level
           </div>
 
           <div className="flex justify-center">

@@ -351,11 +351,12 @@ export default function FertilizerAcidityPage() {
           98G — Fertilizer Acidity
         </h1>
         <p className="mb-6 max-w-3xl text-sm text-gray-600">
-          Enter either <b>Units per acre (N/S)</b> or <b>Product Rate</b>. Co-granulated
-          products contribute acidity from the elemental part of their sulfur. Elemental sulfur therefore
-          contributes 100% of its sulfur. ATS sulfur is automatically included in the
+          Enter either <b>Units per acre (N/S)</b> or <b>Product Rate</b>. Co-granulated products 
+          contribute acidity from the elemental part of their sulfur. Elemental sulfur therefore
+          contributes 100% of its sulfur. Ammonium thiosulfate (ATS) sulfur is automatically included 
           in the calculation.
-
+        </p>
+        <p className="mb-6 max-w-3xl text-sm text-gray-600">
           The rate calculated here can be used as a true 98G maintenance rate for full neutralization
           of the acidity caused by the fertilizers used below.
         </p>

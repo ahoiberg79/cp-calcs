@@ -120,8 +120,20 @@ export default function NinetyEightGApplicationRatePage() {
         <h1 className="mb-2 text-2xl font-bold text-gray-900">98G Application Rate Calculator</h1>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Estimate a recommended 98G application rate for either correction or maintenance.
-          Correction mode uses the Wisconsin-based 98G equation set with a built-in safety net for
-          low results. Maintenance mode uses a 1:1 ratio with nitrogen units applied.
+          Correction mode uses the U of Wisconsin-based 98G equation set with a built-in safety net 
+          for low results (see below). Maintenance mode is 1:1 lb of 98G to nitrogen units applied.
+        </p>
+        <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
+          Generally, single-year applications should be limited to 800 lb/acre for economic and logistical
+          reasons, but in certain casese, higher rates may be agronomically justified. Rates in excess of 
+          800 lb/acre can be split across multiple years.
+        </p>
+        <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
+          Low CEC soils typically do not respond well to buffer pH-based recommendation calculations and may
+          return low rates or even zero rates despite soil pH being below the target. A safety net application
+          regimen has been included in the calculations in an attempt to bridge this known issue. If abnormal rates
+          show up with your data entered, please contact <a href="mailto:agronomy@calciumproducts.com" className="text-red-700 underline hover:text-red-800">
+            agronomy@calciumproducts.com</a> to discuss your situation.
         </p>
 
         <div className="mb-6 rounded-3xl bg-gray-100/70 p-5">

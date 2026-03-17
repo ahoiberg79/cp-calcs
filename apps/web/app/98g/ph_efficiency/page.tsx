@@ -113,8 +113,8 @@ export default function PhEfficiencyPage() {
         <h1 className="mb-2 text-2xl font-bold text-gray-900">Soil pH Nutrient Efficiency Calculator</h1>
         <p className="mb-6 max-w-4xl text-sm text-gray-700">
           This calculator estimates fertilizer cost at risk due to reduced nutrient efficiency at suboptimal soil pH.
-          Phosphate, potash, and sulfur are sized to crop removal first, then nitrogen is sized after crediting nitrogen
-          supplied by the selected phosphate, potash, and sulfur products.
+          Phosphate, potassium, and sulfur are sized to crop removal first, then nitrogen is sized after crediting nitrogen
+          supplied by the selected phosphate, potassium, and sulfur products.
         </p>
 
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -164,7 +164,7 @@ export default function PhEfficiencyPage() {
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           <Picker title="Nitrogen Fertilizer" value={n} setValue={setN} options={N_OPTIONS} onSelect={onSelect} />
           <Picker title="Phosphate Fertilizer" value={p} setValue={setP} options={P_OPTIONS} onSelect={onSelect} />
-          <Picker title="Potash Fertilizer" value={k} setValue={setK} options={K_OPTIONS} onSelect={onSelect} />
+          <Picker title="Potassium Fertilizer" value={k} setValue={setK} options={K_OPTIONS} onSelect={onSelect} />
           <Picker title="Sulfur Fertilizer" value={s} setValue={setS} options={S_OPTIONS} onSelect={onSelect} />
         </div>
 
@@ -186,8 +186,8 @@ export default function PhEfficiencyPage() {
                 <th className="w-[34%] px-3 py-2 text-left">Fertilizer Used</th>
                 <th className="px-2 py-2 text-right">Rate Required (lb/acre)</th>
                 <th className="px-2 py-2 text-right">N Supplied (lb/acre)</th>
-                <th className="px-2 py-2 text-right">P2O5 Supplied (lb/acre)</th>
-                <th className="px-2 py-2 text-right">K2O Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">P<sub>2</sub>O<sub>5</sub> Supplied (lb/acre)</th>
+                <th className="px-2 py-2 text-right">K<sub>2</sub>O Supplied (lb/acre)</th>
                 <th className="px-2 py-2 text-right">S Supplied (lb/acre)</th>
                 <th className="px-2 py-2 text-right">Cost ($/acre)</th>
               </tr>

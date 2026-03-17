@@ -119,7 +119,7 @@ export function calc98GApplicationRate(
   const safety_net_lbs_ac = pH_gap * 1000;
 
   const shouldUseSafetyNet =
-    selection.soil_pH < selection.target_pH_98g && equation_lbs_ac <= 100;
+    selection.soil_pH < selection.target_pH_98g && equation_lbs_ac <= 250;
 
   if (shouldUseSafetyNet) {
     return {
