@@ -28,7 +28,7 @@ function BackButton() {
       href="/so4"
       className="inline-flex items-center rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-800 transition hover:bg-green-100"
     >
-      ← Back to SO4 calculators
+      Back to SO4 calculators
     </Link>
   );
 }

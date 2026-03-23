@@ -110,7 +110,7 @@ export default function PhEfficiencyPage() {
           </a>
         </div>
 
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">Soil pH Nutrient Efficiency Calculator</h1>
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">Soil pH Nutrient Efficiency Calculator</h1>
         <p className="mb-6 max-w-4xl text-sm text-gray-700">
           This calculator estimates fertilizer cost at risk due to reduced nutrient efficiency at suboptimal soil pH.
           Phosphate, potassium, and sulfur are sized to crop removal first, then nitrogen is sized after crediting nitrogen
@@ -238,6 +238,16 @@ export default function PhEfficiencyPage() {
             sub={`Utilization: ${Math.round(out.cards.K.util * 100)}%`}
           />
         </div>
+
+        <div className="mt-8">
+          <a
+            href="/98g"
+            className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+          >
+            Back to 98G Calculators
+          </a>
+        </div>
+
       </section>
     </main>
   );

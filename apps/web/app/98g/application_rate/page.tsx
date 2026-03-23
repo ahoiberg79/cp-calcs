@@ -117,7 +117,7 @@ export default function NinetyEightGApplicationRatePage() {
           <BackButton />
         </div>
 
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">98G Application Rate Calculator</h1>
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">98G Application Rate Calculator</h1>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Estimate a recommended 98G application rate for either correction or maintenance.
           Correction mode uses the U of Wisconsin-based 98G equation set with a built-in safety net 
@@ -252,6 +252,16 @@ export default function NinetyEightGApplicationRatePage() {
             </div>
           )}
         </div>
+
+        <div className="mt-8">
+          <a
+            href="/98g"
+            className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+          >
+            Back to 98G Calculators
+          </a>
+        </div>
+
       </section>
     </main>
   );

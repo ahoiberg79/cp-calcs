@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   calc98G,
   calcAglime,
-  economics,
   listTargetPHs,
   type EquationSet,
   type Tillage,
@@ -57,10 +56,6 @@ export default function NinetyEightGVsAglimePage() {
   const [cost98gPerTon, setCost98gPerTon] = useState<number>(295);
   const [costAglimePerTon, setCostAglimePerTon] = useState<number>(40);
   const [aglimeECCE, setAglimeECCE] = useState<number>(68.8);
-
-  const [pricePerBu, setPricePerBu] = useState<number>(4.0);
-  const [yield98g, setYield98g] = useState<number>(8);
-  const [yieldAglime, setYieldAglime] = useState<number>(0);
 
   const targets98gList = useMemo(() => {
     const values = new Set<number>();
@@ -151,13 +146,8 @@ export default function NinetyEightGVsAglimePage() {
     }
   }, [inst, till, soil_pH, buffer_pH, targetAglime, aglimeECCE]);
 
-  const econ98g = useMemo(() => {
-    return economics(rate98g?.tons_ac ?? 0, cost98gPerTon, yield98g, pricePerBu);
-  }, [rate98g, cost98gPerTon, yield98g, pricePerBu]);
-
-  const econAglime = useMemo(() => {
-    return economics(rateAglime?.tons_ac ?? 0, costAglimePerTon, yieldAglime, pricePerBu);
-  }, [rateAglime, costAglimePerTon, yieldAglime, pricePerBu]);
+  const cost98gPerAcre = (rate98g?.tons_ac ?? 0) * cost98gPerTon;
+  const costAglimePerAcre = (rateAglime?.tons_ac ?? 0) * costAglimePerTon;
 
   const onSelectNumber =
     (setter: (v: number | null) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -177,180 +167,165 @@ export default function NinetyEightGVsAglimePage() {
           <BackButton />
         </div>
 
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">98G vs Aglime</h1>
+        <h1 className="mb-2 text-3xl font-bold text-gray-900">98G vs Aglime</h1>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Compare 98G pelletized limestone and aglime using UW and ISU equations. This calculator
-          estimates product rate, cost per acre, estimated revenue increase, and net return based
-          on your selected soil conditions and economic assumptions. For the purposes of this calculator,
-          neutralizing potential teminology (e.g. ECCE, ENP, NI, ENV) is standardized to ECCE and represents 
-          the effective calcium carbonate equivalence of the product and should be considered interchangeable.
-          Additionally, transportation and application costs should be included in the respective product cost
-          per ton (i.e. if aglime is $40/ton, delivery and application is assumed to be included).
+          focuses on product rate and cost per acre based on your selected soil conditions and
+          product assumptions. For the purposes of this calculator, neutralizing potential
+          terminology (e.g. ECCE, ENP, NI, ENV) is standardized to ECCE and represents the
+          effective calcium carbonate equivalence of the product and should be considered
+          interchangeable. Additionally, transportation and application costs should be included in
+          the respective product cost per ton (i.e. if aglime is $40/ton, delivery and application
+          is assumed to be included).
         </p>
 
         <div className="mb-6 rounded-3xl border border-gray-200 bg-gray-50/80 p-5">
-          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">98G use case</span>
-              <select
-                value={useCase}
-                onChange={(e) => setUseCase(e.target.value as UseCase98G)}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              >
-                <option value="Correction">Correction</option>
-                <option value="Maintenance">Maintenance (250 lb/acre)</option>
-              </select>
-            </label>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
+              <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Calculation Settings
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">98G use case</span>
+                  <select
+                    value={useCase}
+                    onChange={(e) => setUseCase(e.target.value as UseCase98G)}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    <option value="Correction">Correction</option>
+                    <option value="Maintenance">Maintenance (250 lb/acre)</option>
+                  </select>
+                </label>
 
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Equation set</span>
-              <select
-                value={inst}
-                onChange={(e) => setInst(e.target.value as EquationSet)}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              >
-                <option value="UW">UW</option>
-                <option value="ISU">ISU</option>
-              </select>
-            </label>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Equation set</span>
+                  <select
+                    value={inst}
+                    onChange={(e) => setInst(e.target.value as EquationSet)}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    <option value="UW">UW</option>
+                    <option value="ISU">ISU</option>
+                  </select>
+                </label>
 
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Tillage</span>
-              <select
-                value={till}
-                onChange={(e) => setTill(e.target.value as Tillage)}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              >
-                <option value="Conventional">Conventional</option>
-                <option value="No-Till">No-Till</option>
-              </select>
-            </label>
-          </div>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Tillage</span>
+                  <select
+                    value={till}
+                    onChange={(e) => setTill(e.target.value as Tillage)}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    <option value="Conventional">Conventional</option>
+                    <option value="No-Till">No-Till</option>
+                  </select>
+                </label>
+              </div>
+            </div>
 
-          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Soil pH (WpH)</span>
-              <input
-                type="number"
-                step={0.1}
-                value={soil_pH}
-                onChange={(e) => setSoil(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
+            <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
+              <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Soil Test Data
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Soil pH (WpH)</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    value={soil_pH}
+                    onChange={(e) => setSoil(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </label>
 
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Buffer pH (BpH)</span>
-              <input
-                type="number"
-                step={0.1}
-                value={buffer_pH}
-                onChange={(e) => setBuffer(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Buffer pH (BpH)</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    value={buffer_pH}
+                    onChange={(e) => setBuffer(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </label>
 
-            {useCase === "Correction" && (
-              <label className="space-y-1">
-                <span className="text-sm text-gray-600">Target pH (98G)</span>
-                <select
-                  value={target98g ?? ""}
-                  onChange={onSelectNumber(setTarget98g)}
-                  className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-                >
-                  <option value="">Select target pH</option>
-                  {targets98gList.map((p) => (
-                    <option key={`98g-${p}`} value={p}>
-                      {p.toFixed(1)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
+                {useCase === "Correction" && (
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-600">Target pH (98G)</span>
+                    <select
+                      value={target98g ?? ""}
+                      onChange={onSelectNumber(setTarget98g)}
+                      className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                    >
+                      <option value="">Select target pH</option>
+                      {targets98gList.map((p) => (
+                        <option key={`98g-${p}`} value={p}>
+                          {p.toFixed(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
 
-            <label className="space-y-1 md:col-span-2">
-              <span className="text-sm text-gray-600">Target pH (aglime)</span>
-              <select
-                value={targetAglime ?? ""}
-                onChange={onSelectNumber(setTargetAglime)}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              >
-                <option value="">Select target pH</option>
-                {targetsAglimeList.map((p) => (
-                  <option key={`aglime-${p}`} value={p}>
-                    {p.toFixed(1)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Target pH (aglime)</span>
+                  <select
+                    value={targetAglime ?? ""}
+                    onChange={onSelectNumber(setTargetAglime)}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    <option value="">Select target pH</option>
+                    {targetsAglimeList.map((p) => (
+                      <option key={`aglime-${p}`} value={p}>
+                        {p.toFixed(1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">98G product cost ($/ton)</span>
-              <input
-                type="number"
-                step={1}
-                value={cost98gPerTon}
-                onChange={(e) => setCost98gPerTon(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
+            <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
+              <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Product Info
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">98G product cost ($/ton)</span>
+                  <input
+                    type="number"
+                    step={1}
+                    value={cost98gPerTon}
+                    onChange={(e) => setCost98gPerTon(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </label>
 
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Aglime product cost ($/ton)</span>
-              <input
-                type="number"
-                step={1}
-                value={costAglimePerTon}
-                onChange={(e) => setCostAglimePerTon(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Aglime product cost ($/ton)</span>
+                  <input
+                    type="number"
+                    step={1}
+                    value={costAglimePerTon}
+                    onChange={(e) => setCostAglimePerTon(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </label>
 
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Aglime ECCE (%)</span>
-              <input
-                type="number"
-                step={0.1}
-                value={aglimeECCE}
-                onChange={(e) => setAglimeECCE(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
-
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Crop price ($/bushel)</span>
-              <input
-                type="number"
-                step={0.01}
-                value={pricePerBu}
-                onChange={(e) => setPricePerBu(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
-
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">98G - estimated yield increase (bushels/acre)</span>
-              <input
-                type="number"
-                step={0.1}
-                value={yield98g}
-                onChange={(e) => setYield98g(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
-
-            <label className="space-y-1">
-              <span className="text-sm text-gray-600">Aglime - estimated yield increase (bushels/acre)</span>
-              <input
-                type="number"
-                step={0.1}
-                value={yieldAglime}
-                onChange={(e) => setYieldAglime(Number(e.target.value))}
-                className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-            </label>
+                <label className="space-y-1">
+                  <span className="text-sm text-gray-600">Aglime ECCE (%)</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    value={aglimeECCE}
+                    onChange={(e) => setAglimeECCE(Number(e.target.value))}
+                    className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -370,7 +345,7 @@ export default function NinetyEightGVsAglimePage() {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="relative rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <span
-              className="pointer-events-none absolute left-3 right-3 top-0 h-1 rounded-t-3xl"
+              className="pointer-events-none absolute left-3 right-3 top-0 h-1 rounded-full"
               style={{ backgroundColor: BRAND_RED }}
             />
             <div className="mb-4 text-lg font-semibold text-gray-900">98G</div>
@@ -379,10 +354,10 @@ export default function NinetyEightGVsAglimePage() {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-gray-600">Product Rate</span>
                 <span className="text-right text-base font-semibold text-gray-900">
-                  {fmt(rate98g?.tons_ac, 2)} tons/acre
+                  {rate98g ? `${fmt(rate98g.lbs_ac_display, 0)} lb/acre` : "—"}
                   <br />
                   <span className="text-sm font-medium text-gray-600">
-                    {rate98g ? `${fmt(rate98g.lbs_ac_display, 0)} lb/acre` : "—"}
+                    {fmt(rate98g?.tons_ac, 2)} tons/acre
                   </span>
                 </span>
               </div>
@@ -390,35 +365,15 @@ export default function NinetyEightGVsAglimePage() {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-gray-600">Cost per acre</span>
                 <span className="text-base font-semibold text-gray-900">
-                  {money(econ98g.cost_per_acre)}
+                  {money(cost98gPerAcre)}
                 </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-gray-600">Estimated revenue increase</span>
-                <span className="text-base font-semibold text-gray-900">
-                  {money(econ98g.revenue_increase)}
-                </span>
-              </div>
-
-              <div className="rounded-2xl bg-red-50 px-4 py-3">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-red-800">Net return</span>
-                  <span
-                    className={`text-lg font-bold ${
-                      (econ98g.net_return ?? 0) >= 0 ? "text-green-700" : "text-red-700"
-                    }`}
-                  >
-                    {money(econ98g.net_return)}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
 
           <div className="relative rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <span
-              className="pointer-events-none absolute left-3 right-3 top-0 h-1 rounded-t-3xl"
+              className="pointer-events-none absolute left-3 right-3 top-0 h-1 rounded-full"
               style={{ backgroundColor: BRAND_RED }}
             />
             <div className="mb-4 text-lg font-semibold text-gray-900">Aglime</div>
@@ -438,28 +393,8 @@ export default function NinetyEightGVsAglimePage() {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-gray-600">Cost per acre</span>
                 <span className="text-base font-semibold text-gray-900">
-                  {money(econAglime.cost_per_acre)}
+                  {money(costAglimePerAcre)}
                 </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-gray-600">Estimated revenue increase</span>
-                <span className="text-base font-semibold text-gray-900">
-                  {money(econAglime.revenue_increase)}
-                </span>
-              </div>
-
-              <div className="rounded-2xl bg-red-50 px-4 py-3">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-red-800">Net return</span>
-                  <span
-                    className={`text-lg font-bold ${
-                      (econAglime.net_return ?? 0) >= 0 ? "text-green-700" : "text-red-700"
-                    }`}
-                  >
-                    {money(econAglime.net_return)}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
