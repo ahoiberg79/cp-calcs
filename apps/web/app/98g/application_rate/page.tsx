@@ -125,7 +125,7 @@ export default function NinetyEightGApplicationRatePage() {
         </p>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Generally, single-year applications should be limited to 800 lb/acre for economic and logistical
-          reasons, but in certain casese, higher rates may be agronomically justified. Rates in excess of 
+          reasons, but in certain cases, higher rates may be agronomically justified. Rates in excess of 
           800 lb/acre can be split across multiple years.
         </p>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
