@@ -60,15 +60,22 @@ export default function Home() {
 
       <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-12 pt-8">
         <div className="mb-6">
-          <Image
-            src="/logos/cplogo.png"
-            alt="Calcium Products"
-            width={720}
-            height={220}
-            sizes="(max-width: 768px) 360px, (max-width: 1024px) 540px, 720px"
-            className="h-24 w-auto object-contain md:h-32 lg:h-36"
-            priority
-          />
+          <a
+            href="https://www.calciumproducts.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Calcium Products website"
+          >
+            <Image
+              src="/logos/cplogo.png"
+              alt="Calcium Products"
+              width={720}
+              height={220}
+              sizes="(max-width: 768px) 360px, (max-width: 1024px) 540px, 720px"
+              className="h-24 w-auto object-contain md:h-32 lg:h-36"
+              priority
+            />
+          </a>
         </div>
 
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Product Calculators</h1>

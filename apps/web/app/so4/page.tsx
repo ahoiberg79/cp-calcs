@@ -28,14 +28,21 @@ export default function SO4Hub() {
 
       <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-12 pt-8">
         <div className="mb-4 flex w-full justify-center">
-          <Image
-            src="/logos/so4.png"
-            alt="SO4"
-            width={480}
-            height={144}
-            className="h-14 w-auto object-contain md:h-16 lg:h-20"
-            priority
-          />
+          <a
+            href="https://www.calciumproducts.com/products/so4/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Calcium Products website"
+          >
+            <Image
+              src="/logos/so4.png"
+              alt="SO4"
+              width={480}
+              height={144}
+              className="h-14 w-auto object-contain md:h-16 lg:h-20"
+              priority
+            />
+          </a>
         </div>
 
         <h1 className="mb-2 text-center text-3xl font-bold text-gray-900">

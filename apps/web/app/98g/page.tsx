@@ -22,14 +22,21 @@ export default function NinetyEightGHub() {
 
       <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-12 pt-8">
         <div className="mb-4 flex w-full justify-center">
-          <Image
-            src="/logos/98g.png"
-            alt="98G"
-            width={480}
-            height={144}
-            className="h-14 w-auto object-contain md:h-16 lg:h-20"
-            priority
-          />
+          <a
+            href="https://www.calciumproducts.com/products/98g/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Calcium Products website"
+          >
+            <Image
+              src="/logos/98g.png"
+              alt="98G"
+              width={480}
+              height={144}
+              className="h-14 w-auto object-contain md:h-16 lg:h-20"
+              priority
+            />
+          </a>  
         </div>
 
         <h1 className="mb-2 text-center text-3xl font-bold text-gray-900">
