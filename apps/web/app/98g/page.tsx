@@ -66,7 +66,7 @@ export default function NinetyEightGHub() {
             <CalculatorTile
               href="/98g/98gvsaglime"
               title="98G vs aglime"
-              subtitle="Compare rates and ROI"
+              subtitle="Compare rate and cost of 98G vs. aglime"
             />
           </div>
         </div>
