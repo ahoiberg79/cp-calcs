@@ -45,9 +45,9 @@ export function runSo4Sulfur(i: So4SulfurInput): So4SulfurOutput {
 
   const cropCoef: Record<Crop, number> = {
     Corn: 0.18,
-    Soybean: 0.26,
-    Wheat: 0.28,
-    Alfalfa: 6.0,
+    Soybean: 0.32,
+    Wheat: 0.30,
+    Alfalfa: 7.0,
   };
 
   const cropCoefficient = cropCoef[i.crop];
@@ -58,7 +58,7 @@ export function runSo4Sulfur(i: So4SulfurInput): So4SulfurOutput {
       ? sulfurPpm * 0.2 * 2
       : sulfurPpm * 0.3 * 8;
 
-  const sulfurCreditFromOMLbPerA = i.organicMatterPct * 3;
+  const sulfurCreditFromOMLbPerA = i.organicMatterPct * 2.5;
 
   const preFloorSulfurNeededLbPerA =
     sulfurDemandLbPerA - sulfurCreditFromSoilLbPerA - sulfurCreditFromOMLbPerA;
