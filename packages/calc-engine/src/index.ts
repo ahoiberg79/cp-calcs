@@ -6,6 +6,8 @@ export * from "./fertilizer_acidity";
 export * from "./98g_vs_aglime";
 export * from "./ph_efficiency";
 export * from "./so4_sodic";
+export * from "./98g_application_rate";
+export * from "./so4_equivalency";
 
 /* 98G application rate */
 export {

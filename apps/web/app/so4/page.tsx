@@ -60,6 +60,11 @@ export default function SO4Hub() {
               subtitle="Crop-based SO4 recommendation"
             />
             <CalculatorTile
+              href="/so4/equivalent-rate"
+              title="SO4 Equivalency"
+              subtitle="Calculate equivalent rate of SO4 from other sulfur fertilizer rates"
+            />
+            <CalculatorTile
               href="/so4/high-mg"
               title="High Mg Amendment"
               subtitle="Lower % Mg through calcium displacement"
