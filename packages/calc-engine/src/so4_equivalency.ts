@@ -1,11 +1,9 @@
 export type So4EquivalentProductId =
-  | "sulfur-units"
   | "ams"
   | "ats"
-  | "es"
-  | "cogran_12_40_0_10s_1zn"
-  | "cogran_12_40_0_10s"
-  | "cogran_13_33_0_15s";
+  | "es_80"
+  | "es_85"
+  | "es_90";
 
 export type So4InputMode = "product_rate" | "sulfur_units";
 
@@ -26,18 +24,12 @@ export const SO4_EQUIVALENT_PRODUCTS: Record<
   So4EquivalentProductId,
   So4EquivalentProduct
 > = {
-  "sulfur-units": {
-    id: "sulfur-units",
-    label: "Sulfur Units",
-    sulfurFraction: 1,
-    defaultEntryUnit: "lb/acre",
-    notes: "Direct sulfur entry in lb S/acre.",
-  },
   ams: {
     id: "ams",
     label: "Ammonium Sulfate (AMS)",
     sulfurFraction: 0.24,
     defaultEntryUnit: "lb/acre",
+    notes: "Assumes 24% sulfur.",
   },
   ats: {
     id: "ats",
@@ -47,30 +39,26 @@ export const SO4_EQUIVALENT_PRODUCTS: Record<
     densityLbPerGal: 11.0,
     notes: "Assumes 12-0-0-26 ATS at 11.0 lb/gal.",
   },
-  es: {
-    id: "es",
-    label: "Elemental Sulfur (ES)",
+  es_80: {
+    id: "es_80",
+    label: "Elemental Sulfur (ES) 80%",
+    sulfurFraction: 0.8,
+    defaultEntryUnit: "lb/acre",
+    notes: "Assumes 80% elemental sulfur.",
+  },
+  es_85: {
+    id: "es_85",
+    label: "Elemental Sulfur (ES) 85%",
+    sulfurFraction: 0.85,
+    defaultEntryUnit: "lb/acre",
+    notes: "Assumes 85% elemental sulfur.",
+  },
+  es_90: {
+    id: "es_90",
+    label: "Elemental Sulfur (ES) 90%",
     sulfurFraction: 0.9,
     defaultEntryUnit: "lb/acre",
-    notes: "Assumes 90% sulfur.",
-  },
-  cogran_12_40_0_10s_1zn: {
-    id: "cogran_12_40_0_10s_1zn",
-    label: "Co-Granulated (12-40-0-10S-1Zn)",
-    sulfurFraction: 0.1,
-    defaultEntryUnit: "lb/acre",
-  },
-  cogran_12_40_0_10s: {
-    id: "cogran_12_40_0_10s",
-    label: "Co-Granulated (12-40-0-10S)",
-    sulfurFraction: 0.1,
-    defaultEntryUnit: "lb/acre",
-  },
-  cogran_13_33_0_15s: {
-    id: "cogran_13_33_0_15s",
-    label: "Co-Granulated (13-33-0-15S)",
-    sulfurFraction: 0.15,
-    defaultEntryUnit: "lb/acre",
+    notes: "Assumes 90% elemental sulfur.",
   },
 } as const;
 
@@ -88,20 +76,17 @@ export type So4EquivalentOutput = {
   sourceProductRateLbPerA?: number;
   sourceProductRateGalPerA?: number;
   equivalentSo4LbPerA: number;
-  equivalentSo4TonsPerA: number;
   conversionFactorToSo4?: number;
 };
 
 export type So4ReferenceTableRow = {
   sulfurLbPerA: number;
   so4LbPerA: number;
-  so4TonsPerA: number;
   amsLbPerA: number;
   atsGalPerA: number;
-  esLbPerA: number;
-  cogran1240010s1znLbPerA: number;
-  cogran1240010sLbPerA: number;
-  cogran1333015sLbPerA: number;
+  es80LbPerA: number;
+  es85LbPerA: number;
+  es90LbPerA: number;
 };
 
 function roundTo(value: number, decimals: number): number {
@@ -135,18 +120,13 @@ export function calculateSulfurFromProductRate(
   const cleanRate = clampNonNegative(productRate);
   const entryUnit = unit ?? product.defaultEntryUnit;
 
-  if (productId === "sulfur-units") {
-    return {
-      sulfurLbPerA: cleanRate,
-    };
-  }
-
   if (entryUnit === "gal/acre") {
     if (typeof product.densityLbPerGal !== "number") {
       throw new Error(`${product.label} does not support gal/acre entry.`);
     }
 
     const lbPerA = cleanRate * product.densityLbPerGal;
+
     return {
       sulfurLbPerA: lbPerA * product.sulfurFraction,
       normalizedProductRateLbPerA: lbPerA,
@@ -184,10 +164,9 @@ export function calculateSo4Equivalent(
   }
 
   const equivalentSo4LbPerA = sulfurLbPerA / SO4_SULFUR_FRACTION;
-  const equivalentSo4TonsPerA = equivalentSo4LbPerA / 2000;
 
   const conversionFactorToSo4 =
-    input.inputMode === "product_rate" && input.productId !== "sulfur-units"
+    input.inputMode === "product_rate"
       ? product.sulfurFraction / SO4_SULFUR_FRACTION
       : undefined;
 
@@ -203,7 +182,6 @@ export function calculateSo4Equivalent(
         ? roundTo(sourceProductRateGalPerA, 2)
         : undefined,
     equivalentSo4LbPerA: roundTo(equivalentSo4LbPerA, 0),
-    equivalentSo4TonsPerA: roundTo(equivalentSo4TonsPerA, 2),
     conversionFactorToSo4:
       typeof conversionFactorToSo4 === "number"
         ? roundTo(conversionFactorToSo4, 4)
@@ -212,7 +190,7 @@ export function calculateSo4Equivalent(
 }
 
 function productRateForSulfurTarget(
-  productId: Exclude<So4EquivalentProductId, "sulfur-units">,
+  productId: So4EquivalentProductId,
   sulfurLbPerA: number
 ): number {
   const product = getProductById(productId);
@@ -233,21 +211,10 @@ export function buildSo4ReferenceTable(
   return sulfurTargets.map((sulfurLbPerA) => ({
     sulfurLbPerA,
     so4LbPerA: roundTo(sulfurLbPerA / SO4_SULFUR_FRACTION, 0),
-    so4TonsPerA: roundTo((sulfurLbPerA / SO4_SULFUR_FRACTION) / 2000, 2),
     amsLbPerA: roundTo(productRateForSulfurTarget("ams", sulfurLbPerA), 0),
     atsGalPerA: roundTo(productRateForSulfurTarget("ats", sulfurLbPerA), 1),
-    esLbPerA: roundTo(productRateForSulfurTarget("es", sulfurLbPerA), 0),
-    cogran1240010s1znLbPerA: roundTo(
-      productRateForSulfurTarget("cogran_12_40_0_10s_1zn", sulfurLbPerA),
-      0
-    ),
-    cogran1240010sLbPerA: roundTo(
-      productRateForSulfurTarget("cogran_12_40_0_10s", sulfurLbPerA),
-      0
-    ),
-    cogran1333015sLbPerA: roundTo(
-      productRateForSulfurTarget("cogran_13_33_0_15s", sulfurLbPerA),
-      0
-    ),
+    es80LbPerA: roundTo(productRateForSulfurTarget("es_80", sulfurLbPerA), 0),
+    es85LbPerA: roundTo(productRateForSulfurTarget("es_85", sulfurLbPerA), 0),
+    es90LbPerA: roundTo(productRateForSulfurTarget("es_90", sulfurLbPerA), 0),
   }));
 }
