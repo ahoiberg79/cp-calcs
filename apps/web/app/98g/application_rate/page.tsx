@@ -98,14 +98,15 @@ export default function NinetyEightGApplicationRatePage() {
     if (result.method === "safety_net") {
       return (
         <>
-          The standard correction equation returned a rate at or below 100 lb/acre while soil pH
-          remained below the selected target pH. Safety-net logic was applied at 100 lb/acre per
-          0.1 soil pH unit needed to reach the target.
+          The safety-net rate was higher than the equation-based rate, so the recommendation uses 100 lb 98G/acre per
+          0.1 soil pH unit needed to reach the selected target pH.
         </>
       );
     }
 
-    return <>This recommendation is based on the selected 98G correction equation.</>;
+    return <>This recommendation compares the selected 98G correction equation with a safety-net rate of 100 lb/acre per
+             0.1 soil pH unit below the target pH, then returns the higher of the two rates.
+           </>
   })();
 
   return (
@@ -120,8 +121,8 @@ export default function NinetyEightGApplicationRatePage() {
         <h1 className="mb-2 text-3xl font-bold text-gray-900">98G Application Rate Calculator</h1>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Estimate a recommended 98G application rate for either correction or maintenance.
-          Correction mode uses the U of Wisconsin-based 98G equation set with a built-in safety net 
-          for low results (see below). Maintenance mode is 1:1 lb of 98G to nitrogen units applied.
+          Correction mode uses the U of Wisconsin-based 98G equation set and compares it with a pH-gap safety-net
+          rate. Maintenance mode is 1:1 lb of 98G to nitrogen units applied.
         </p>
         <p className="mb-6 max-w-3xl text-sm leading-6 text-gray-600">
           Generally, single-year applications should be limited to 800 lb/acre for economic and logistical

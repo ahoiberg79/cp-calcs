@@ -1,33 +1,30 @@
 import { EQUATIONS, type EquationRow } from "./data/98g_aglime_equations";
 
-// ---------- Types ----------
 export type EquationSet = "UW" | "ISU";
 export type Tillage = "Conventional" | "No-Till";
 export type UseCase98G = "Correction" | "Maintenance";
+export type RateMethod98G = "equation" | "safety_net" | "maintenance";
 
 export interface SelectionCommon {
   institution: EquationSet;
   tillage: Tillage;
-  soil_pH: number;   // WpH
-  buffer_pH: number; // BpH
+  soil_pH: number;
+  buffer_pH: number;
 }
 
 export interface Selection98G extends SelectionCommon {
   useCase: UseCase98G;
-  target_pH_98g: number; // used only when useCase = Correction
+  target_pH_98g: number;
 }
 
 export interface SelectionAglime extends SelectionCommon {
   target_pH_aglime: number;
-  ecce_percent: number; // e.g. 68.8
+  ecce_percent: number;
 }
 
-// ---------- Helpers ----------
 const clamp0 = (n: number) => (n < 0 ? 0 : n);
 const roundTo = (n: number, step: number) => Math.round(n / step) * step;
 
-// Safe-ish evaluator for our controlled equations.
-// Variables allowed: BpH, WpH, Math
 function evalEquation(expr: string, BpH: number, WpH: number): number {
   if (!/^[0-9+\-*/().\sBpHWpMath]*[A-Za-z]*$/.test(expr.replace(/Math\.\w+/g, ""))) {
     throw new Error("Equation contains unexpected tokens");
@@ -81,7 +78,6 @@ export function listTargetPHs(
   return Array.from(values).sort((a, b) => a - b);
 }
 
-// ---------- Core calculators ----------
 export function calc98G(selection: Selection98G) {
   if (selection.useCase === "Maintenance") {
     const lbs_ac = 250;
@@ -92,29 +88,37 @@ export function calc98G(selection: Selection98G) {
       lbs_ac,
       tons_ac_display: Number(tons_ac.toFixed(2)),
       lbs_ac_display: roundTo(lbs_ac, 50),
+      method: "maintenance" as RateMethod98G,
     };
   }
 
-  const row = pickRow(
-    "98G",
-    selection.institution,
-    selection.tillage,
-    selection.target_pH_98g
-  );
+  const row = pickRow("98G", selection.institution, selection.tillage, selection.target_pH_98g);
 
   if (!row) {
     throw new Error("No 98G equation row matched selection");
   }
 
-  // 98G equations return lb/acre
-  const lbs_ac = clamp0(evalEquation(row.equation, selection.buffer_pH, selection.soil_pH));
+  const equation_lbs_ac = clamp0(
+    evalEquation(row.equation, selection.buffer_pH, selection.soil_pH)
+  );
+
+  const pH_gap = Math.max(0, selection.target_pH_98g - selection.soil_pH);
+  const safety_net_lbs_ac = pH_gap * 1000;
+  const lbs_ac = Math.max(equation_lbs_ac, safety_net_lbs_ac);
   const tons_ac = lbs_ac / 2000;
+
+  const method: RateMethod98G =
+    safety_net_lbs_ac > equation_lbs_ac ? "safety_net" : "equation";
 
   return {
     tons_ac,
     lbs_ac,
     tons_ac_display: Number(tons_ac.toFixed(2)),
     lbs_ac_display: roundTo(lbs_ac, 50),
+    method,
+    equation_lbs_ac,
+    safety_net_lbs_ac,
+    pH_gap,
   };
 }
 
@@ -130,15 +134,12 @@ export function calcAglime(selection: SelectionAglime) {
     throw new Error("No aglime equation row matched selection");
   }
 
-  // aglime equations return tons/acre before ECCE adjustment
   const base_tons_ac = clamp0(
     evalEquation(row.equation, selection.buffer_pH, selection.soil_pH)
   );
 
   const adjusted_tons_ac =
-    selection.ecce_percent > 0
-      ? base_tons_ac / (selection.ecce_percent / 100)
-      : base_tons_ac;
+    selection.ecce_percent > 0 ? base_tons_ac / (selection.ecce_percent / 100) : base_tons_ac;
 
   const tons_ac = clamp0(adjusted_tons_ac);
   const lbs_ac = tons_ac * 2000;
@@ -151,7 +152,6 @@ export function calcAglime(selection: SelectionAglime) {
   };
 }
 
-// ---------- Economics ----------
 export function economics(
   rate_tons_acre: number,
   cost_per_ton: number,

@@ -112,9 +112,18 @@ export default function PhEfficiencyPage() {
 
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Soil pH Nutrient Efficiency Calculator</h1>
         <p className="mb-6 max-w-4xl text-sm text-gray-700">
-          This calculator estimates fertilizer cost at risk due to reduced nutrient efficiency at suboptimal soil pH.
-          Phosphate, potassium, and sulfur are sized to crop removal first, then nitrogen is sized after crediting nitrogen
-          supplied by the selected phosphate, potassium, and sulfur products.
+          First, select your crop, yield goal, and soil pH level from the dropdowns at the top of the screen. This will calculate fertilizer 
+          removal rates for N, P, K, and S to support your selected yield level and set the utilization level of the fertilizers at your pH 
+          based on estimated availability. 
+        </p>
+        <p className="mb-6 max-w-4xl text-sm text-gray-700">
+          Second, select your fertilizer sources for supplying the N, P, K, and S and input your pricing levels. 
+        </p>
+        <p className="mb-6 max-w-4xl text-sm text-gray-700">
+          Once these values are input, the calculator will utilize your values to calculate the hidden cost of having less than 
+          optimum pH levels based on the nutrient availability levels of each nutrient at the pH level you designated. By having lower than 
+          optimum pH levels, growers cannot maximize the nutrient availability of applied fertilizers for their growing crop. Phosphorus typically 
+          is the nutrient most negatively affected by soil pH when it comes to availability levels.
         </p>
 
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -239,15 +248,21 @@ export default function PhEfficiencyPage() {
           />
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-3">
           <a
             href="/98g"
             className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
           >
             Back to 98G Calculators
           </a>
-        </div>
 
+          <p className="mb-6 max-w-4xl text-sm text-gray-700">
+            Disclaimer: This calculator is intended to help understand why managing pH is important - it is not intended to be a precise predictor of outcomes on a given field, 
+            but rather a tool to understand the relative impact of pH on nutrient availability and the associated hidden costs. We know crop yields are sensitive to soil pH
+            and we feel this is a tool to help simplify the complicated soil chemistry that results in reduced yield at low soil pH down to a simple financial calculation that 
+            growers can understand and use to make informed decisions about managing soil pH on their farm. 
+          </p>
+        </div>  
       </section>
     </main>
   );

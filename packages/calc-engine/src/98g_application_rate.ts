@@ -67,10 +67,7 @@ function pickRow(
   );
 }
 
-export function list98GTargetPHs(
-  institution: EquationSet,
-  tillage: Tillage
-): number[] {
+export function list98GTargetPHs(institution: EquationSet, tillage: Tillage): number[] {
   const values = new Set<number>();
 
   for (const r of EQUATIONS) {
@@ -100,12 +97,7 @@ export function calc98GApplicationRate(
     };
   }
 
-  const row = pickRow(
-    "98G",
-    selection.institution,
-    selection.tillage,
-    selection.target_pH_98g
-  );
+  const row = pickRow("98G", selection.institution, selection.tillage, selection.target_pH_98g);
 
   if (!row) {
     throw new Error("No 98G equation row matched selection");
@@ -117,26 +109,17 @@ export function calc98GApplicationRate(
 
   const pH_gap = Math.max(0, selection.target_pH_98g - selection.soil_pH);
   const safety_net_lbs_ac = pH_gap * 1000;
+  const lbs_ac = Math.max(equation_lbs_ac, safety_net_lbs_ac);
 
-  const shouldUseSafetyNet =
-    selection.soil_pH < selection.target_pH_98g && equation_lbs_ac <= 250;
-
-  if (shouldUseSafetyNet) {
-    return {
-      lbs_ac: safety_net_lbs_ac,
-      lbs_ac_display: roundTo(safety_net_lbs_ac, 50),
-      method: "safety_net",
-      equation_lbs_ac,
-      safety_net_lbs_ac,
-      pH_gap,
-    };
-  }
+  const method: RateMethod =
+    safety_net_lbs_ac > equation_lbs_ac ? "safety_net" : "equation";
 
   return {
-    lbs_ac: equation_lbs_ac,
-    lbs_ac_display: roundTo(equation_lbs_ac, 50),
-    method: "equation",
+    lbs_ac,
+    lbs_ac_display: roundTo(lbs_ac, 50),
+    method,
     equation_lbs_ac,
+    safety_net_lbs_ac,
     pH_gap,
   };
 }
